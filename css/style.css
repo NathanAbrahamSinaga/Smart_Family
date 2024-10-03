@@ -1,0 +1,24 @@
+html, body {
+    height: 100%;
+    margin: 0; /* Pastikan tidak ada margin pada body */
+}
+
+body {
+    display: flex;
+    flex-direction: column; /* Mengatur arah fleksibel ke kolom */
+}
+
+.content {
+    flex: 1; /* Mengambil sisa ruang */
+    display: flex;
+    flex-direction: column; /* Mengatur elemen dalam kolom */
+    justify-content: center; /* Pusatkan secara vertikal */
+    align-items: center; /* Pusatkan secara horizontal */
+}
+
+footer {
+    background-color: #363737;
+    text-align: center;
+    padding: 1rem;
+    color: white; /* Menambahkan warna teks pada footer */
+}

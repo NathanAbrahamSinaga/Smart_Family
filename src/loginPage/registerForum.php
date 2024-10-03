@@ -20,6 +20,9 @@
             <label for="Password">Password</label>
             <input type="password" name="password" id="password" placeholder="Masukkan password" required>
         </div>
+        <div>
+            <button type="submit" name="register">Register</button>
+        </div>
     </form>
 </body>
 </html>

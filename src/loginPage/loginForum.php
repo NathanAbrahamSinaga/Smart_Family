@@ -16,6 +16,9 @@
             <label for="Password">Password</label>
             <input type="password" name="password" id="password" required>
         </div>
+        <div>
+            <button type="submit" name="login">Login</button>
+        </div>
     </form>
 </body>
 </html>
