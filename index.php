@@ -11,6 +11,7 @@
         <h1>Welcome to my smart family website</h1>
         <button href="loginAdmin.php" type="button" class="btn btn-primary">Login Admin</button>
         <button href="loginForum.php" type="button" class="btn btn-success">Forum</button>
+        <button href="tarombo.php" type="button" class="btn btn-danger">Tarombo</button>
     </div>
 </body>
 </html>
