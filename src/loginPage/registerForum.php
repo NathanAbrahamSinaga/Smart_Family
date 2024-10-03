@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Masukkan nama lengkap, username, dan password</h1>
-    <form action="">
+    <form method="post" action="registerUser.php">
         <div>
             <label for="Name">Nama Lengkap</label>
             <input type="text" name="name" id="name" placeholder="Masukkan nama lengkap" required>

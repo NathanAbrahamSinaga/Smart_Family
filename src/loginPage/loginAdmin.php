@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Masukkan username dan password</h1>
-    <form action="">
+    <form method="post" action="validasiAdmin.php">
         <div>
             <label for="Username">Username</label>
             <input type="text" name="username" id="username" placeholder="Masukkan username" required>

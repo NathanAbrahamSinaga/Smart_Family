@@ -6,7 +6,9 @@
     <title>Document</title>
 </head>
 <body>
-    <button href="loginForum.php" type="button" class="btn btn-primary">Login</button>
-    <button href="registerForum.php" type="button" class="btn btn-secondary">Register</button>
+    <div>
+        <button href="loginForum.php" type="button" class="btn btn-primary">Login</button>
+        <button href="registerForum.php" type="button" class="btn btn-secondary">Register</button>
+    </div>
 </body>
 </html>
