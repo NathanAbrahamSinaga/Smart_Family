@@ -2,7 +2,7 @@
 session_start();
 require_once '../../server/config.php';
 
-// Check if user is logged in
+// Pastikan user sudah login
 if (!isset($_SESSION["user_id"])) {
     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
     exit();
@@ -13,30 +13,36 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Function to get members of a specific generation
+// Fungsi untuk mendapatkan generasi
+function getGenerations($conn) {
+    $sql = "SELECT DISTINCT generasi FROM anggota ORDER BY generasi";
+    $result = $conn->query($sql);
+    $generations = [];
+    while ($row = $result->fetch_assoc()) {
+        $generations[] = $row['generasi'];
+    }
+    return $generations;
+}
+
+// Fungsi untuk mendapatkan anggota berdasarkan generasi
 function getMembersByGeneration($conn, $generation) {
     $sql = "SELECT id, nama, id_orang_tua_1, id_orang_tua_2 FROM anggota WHERE generasi = ? ORDER BY nama";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $generation);
     $stmt->execute();
     $result = $stmt->get_result();
-    $members = $result->fetch_all(MYSQLI_ASSOC);
+    $members = [];
+    while ($row = $result->fetch_assoc()) {
+        $members[] = $row;
+    }
     $stmt->close();
     return $members;
 }
 
-// Get all generations
-$sql = "SELECT DISTINCT generasi FROM anggota ORDER BY generasi";
-$result = $conn->query($sql);
-$generations = $result->fetch_all(MYSQLI_ASSOC);
-
-// Get selected generation (default to the first generation if not set)
-$selectedGeneration = isset($_GET['generation']) ? intval($_GET['generation']) : $generations[0]['generasi'];
-
-// Get members of the selected generation
+$generations = getGenerations($conn);
+$selectedGeneration = isset($_GET['generation']) ? intval($_GET['generation']) : $generations[0];
 $members = getMembersByGeneration($conn, $selectedGeneration);
 
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -46,79 +52,60 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tarombo - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex">
-    <!-- Sidebar -->
-    <nav class="bg-blue-500 text-white w-64 min-h-screen p-5">
-        <h1 class="text-2xl font-bold mb-6">Sundut (Generasi)</h1>
-        <?php foreach ($generations as $gen): ?>
-            <a href="?generation=<?php echo $gen['generasi']; ?>" 
-               class="block py-2 px-4 mb-2 <?php echo $gen['generasi'] == $selectedGeneration ? 'bg-blue-700' : 'hover:bg-blue-600'; ?> rounded">
-                Generasi <?php echo $gen['generasi']; ?>
-            </a>
-        <?php endforeach; ?>
-    </nav>
+<body class="bg-gray-100">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-blue-500 min-h-screen p-4">
+            <h2 class="text-white text-xl font-semibold mb-4">Sundut (Generasi)</h2>
+            <nav>
+                <?php foreach ($generations as $gen): ?>
+                    <a href="?generation=<?php echo $gen; ?>" class="block py-2 px-4 text-white hover:bg-blue-600 rounded <?php echo $gen == $selectedGeneration ? 'bg-blue-600' : ''; ?>">
+                        Generasi <?php echo $gen; ?>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+        </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-10">
-        <h2 class="text-3xl font-bold mb-6">Generasi <?php echo $selectedGeneration; ?></h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php foreach ($members as $member): ?>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h3 class="text-xl font-semibold mb-2">
-                        <a href="kumpulanProfile.php?search=<?php echo urlencode($member['nama']); ?>" 
-                           class="text-blue-600 hover:underline">
-                            <?php echo htmlspecialchars($member['nama']); ?>
-                        </a>
-                    </h3>
-                    <p class="text-gray-600">
-                        <?php
-                        // Get parent names
-                        $parentNames = [];
-                        if ($member['id_orang_tua_1']) {
-                            $parentNames[] = getParentName($conn, $member['id_orang_tua_1']);
-                        }
-                        if ($member['id_orang_tua_2']) {
-                            $parentNames[] = getParentName($conn, $member['id_orang_tua_2']);
-                        }
-                        if (!empty($parentNames)) {
-                            echo "Orang Tua: " . implode(", ", $parentNames) . "<br>";
-                        }
+        <!-- Main Content -->
+        <main class="flex-1 p-8">
+            <h1 class="text-3xl font-semibold mb-6">Generasi <?php echo $selectedGeneration; ?></h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php foreach ($members as $member): ?>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-2">
+                            <a href="kumpulanProfile.php?search=<?php echo urlencode($member['nama']); ?>" class="text-blue-600 hover:underline">
+                                <?php echo htmlspecialchars($member['nama']); ?>
+                            </a>
+                        </h3>
+                        <p class="text-gray-600">
+                            <?php
+                            // Fetch and display parent names
+                            if ($member['id_orang_tua_1']) {
+                                $parentQuery = "SELECT nama FROM anggota WHERE id IN (?, ?)";
+                                $stmt = $conn->prepare($parentQuery);
+                                $stmt->bind_param("ii", $member['id_orang_tua_1'], $member['id_orang_tua_2']);
+                                $stmt->execute();
+                                $parentResult = $stmt->get_result();
+                                $parents = $parentResult->fetch_all(MYSQLI_ASSOC);
+                                $stmt->close();
 
-                        // Get children names
-                        $childrenNames = getChildrenNames($conn, $member['id']);
-                        if (!empty($childrenNames)) {
-                            echo "Anak: " . implode(", ", $childrenNames);
-                        }
-                        ?>
-                    </p>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </main>
+                                if (!empty($parents)) {
+                                    echo "Orang Tua: " . implode(", ", array_column($parents, 'nama'));
+                                }
+                            }
+                            ?>
+                        </p>
+                        <!-- You can add more details here if needed -->
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </main>
+    </div>
 </body>
 </html>
 
 <?php
-function getParentName($conn, $parentId) {
-    $sql = "SELECT nama FROM anggota WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $parentId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $parent = $result->fetch_assoc();
-    $stmt->close();
-    return $parent ? $parent['nama'] : 'Unknown';
-}
-
-function getChildrenNames($conn, $parentId) {
-    $sql = "SELECT nama FROM anggota WHERE id_orang_tua_1 = ? OR id_orang_tua_2 = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ii", $parentId, $parentId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $children = $result->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
-    return array_column($children, 'nama');
-}
+$conn->close();
 ?>
