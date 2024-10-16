@@ -8,61 +8,62 @@ require_once '../../server/config.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Forum - Smart Family</title>
-    <link rel="stylesheet" href="../../assets/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/output.css">
 </head>
-<body>
+<body class="bg-gray-100">
     <!-- Container Utama -->
-    <div class="container text-center mt-5 content">
+    <div class="container mx-auto text-center mt-20">
         <!-- Judul -->
-        <h2 class="mb-4">Register Forum</h2>
+        <h2 class="text-3xl font-semibold mb-8">Register Forum</h2>
 
         <!-- Form Register -->
-        <form action="<?php echo BASE_URL; ?>server/registerUser.php" method="POST">
-            <div class="mb-3">
-                <label for="nama_lengkap" class="form-label">Nama Lengkap</label>
-                <input type="text" class="form-control" id="nama_lengkap" name="nama_lengkap" required>
+        <form action="<?php echo BASE_URL; ?>server/registerUser.php" method="POST" class="max-w-sm mx-auto">
+            <div class="mb-4">
+                <label for="nama_lengkap" class="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap</label>
+                <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nama_lengkap" name="nama_lengkap" required>
             </div>
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required>
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" name="username" required>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+            <div class="mb-4">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" required>
             </div>
-            <div class="mb-3">
-                <label for="confirm_password" class="form-label">Konfirmasi Password</label>
-                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+            <div class="mb-6">
+                <label for="confirm_password" class="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Password</label>
+                <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="confirm_password" name="confirm_password" required>
             </div>
-            <button type="submit" class="btn btn-success">Register</button>
+            <button type="submit" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Register</button>
         </form>
 
         <?php
             if(isset($_GET['register_gagal'])) {
+                $message = '';
+                $alertClass = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4';
                 if($_GET['register_gagal'] == 'password') {
-                    echo '<div class="alert alert-danger mt-3">Password tidak sama</div>';
+                    $message = 'Password tidak sama';
                 } elseif($_GET['register_gagal'] == 'username') {
-                    echo '<div class="alert alert-danger mt-3">Username sudah digunakan</div>';
+                    $message = 'Username sudah digunakan';
                 } elseif($_GET['register_gagal'] == 'database') {
-                    echo '<div class="alert alert-danger mt-3">Gagal menyimpan data. Silakan coba lagi.</div>';
+                    $message = 'Gagal menyimpan data. Silakan coba lagi.';
                 }
+                echo "<div class=\"$alertClass\" role=\"alert\">$message</div>";
             } elseif(isset($_GET['register_sukses'])) {
-                echo '<div class="alert alert-success mt-3">Registrasi berhasil. Silakan login.</div>';
+                echo '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4" role="alert">Registrasi berhasil. Silakan login.</div>';
             }
         ?>
 
         <!-- Link Kembali ke Halaman Forum -->
-        <div class="mt-4">
-            <a href="loginForumPage.php" class="btn btn-secondary">Kembali</a>
+        <div class="mt-8">
+            <a href="loginForumPage.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Kembali</a>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer>
-        <p class="mb-0">&copy; 2024 Smart Family. All rights reserved.</p>
+    <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
+        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
-
-    <script src="../../assets/bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

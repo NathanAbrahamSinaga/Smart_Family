@@ -5,7 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Smart Family</title>
         <!-- Tailwind CSS CDN -->
-        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
         <link rel="stylesheet" href="assets/css/output.css">
     </head>
     <body class="bg-gray-100">

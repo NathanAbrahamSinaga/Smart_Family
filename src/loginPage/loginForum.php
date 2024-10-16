@@ -13,60 +13,61 @@ if (isset($_SESSION["user_id"])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Forum - Smart Family</title>
-    <link rel="stylesheet" href="../../assets/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/output.css">
 </head>
-<body>
+<body class="bg-gray-100">
     <!-- Container Utama -->
-    <div class="container text-center mt-5 content">
+    <div class="container mx-auto text-center mt-20">
         <!-- Judul -->
-        <h2 class="mb-4">Login Forum</h2>
+        <h2 class="text-3xl font-semibold mb-8">Login Forum</h2>
 
         <!-- Form Login -->
-        <form action="<?php echo BASE_URL; ?>server/validasi/validasiUser.php" method="POST">
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required 
+        <form action="<?php echo BASE_URL; ?>server/validasi/validasiUser.php" method="POST" class="max-w-sm mx-auto">
+            <div class="mb-4">
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" name="username" required 
                 value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>">
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Login</button>
         </form>
 
         <?php
             // Menampilkan pesan gagal login
             if(isset($_GET['login_gagal'])) {
+                $message = '';
+                $alertClass = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4';
                 if($_GET['login_gagal'] == 'username') {
-                    echo '<div class="alert alert-danger mt-3">Username tidak ditemukan</div>';
+                    $message = 'Username tidak ditemukan';
                 } elseif($_GET['login_gagal'] == 'password') {
-                    echo '<div class="alert alert-danger mt-3">Password salah</div>';
+                    $message = 'Password salah';
                 } elseif($_GET['login_gagal'] == 'lengkapi') {
-                    echo '<div class="alert alert-danger mt-3">Silakan lengkapi semua field</div>';
+                    $message = 'Silakan lengkapi semua field';
                 } elseif($_GET['login_gagal'] == 'stmt_prepare') {
-                    echo '<div class="alert alert-danger mt-3">Terjadi kesalahan pada sistem. Silakan coba lagi.</div>';
+                    $message = 'Terjadi kesalahan pada sistem. Silakan coba lagi.';
                 }
+                echo "<div class=\"$alertClass\" role=\"alert\">$message</div>";
             }
 
             // Menampilkan pesan sukses registrasi
             if(isset($_GET['register_sukses']) && $_GET['register_sukses'] == '1') {
-                echo '<div class="alert alert-success mt-3">Registrasi berhasil. Silakan login.</div>';
+                echo '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4" role="alert">Registrasi berhasil. Silakan login.</div>';
             }
         ?>
 
         <!-- Link Kembali ke Halaman Forum -->
-        <div class="mt-4">
-            <a href="loginForumPage.php" class="btn btn-secondary">Kembali</a>
+        <div class="mt-8">
+            <a href="loginForumPage.php" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Kembali</a>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer>
-        <p class="mb-0">&copy; 2024 Smart Family. All rights reserved.</p>
+    <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
+        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
-
-    <script src="../../assets/bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
