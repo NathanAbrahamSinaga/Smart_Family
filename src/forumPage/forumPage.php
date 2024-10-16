@@ -19,6 +19,12 @@ $sql = "SELECT tf.id, tf.judul, tf.isi, tf.tanggal_dibuat, uf.username
         JOIN users_forum uf ON tf.id_pembuat = uf.id 
         ORDER BY tf.tanggal_dibuat DESC";
 $result = $conn->query($sql);
+
+// Fungsi untuk membatasi jumlah kata
+function limit_words($string, $word_limit) {
+    $words = explode(' ', $string);
+    return implode(' ', array_slice($words, 0, $word_limit)) . (count($words) > $word_limit ? '...' : '');
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -32,10 +38,10 @@ $result = $conn->query($sql);
     <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold">Smart Family Forum</h1>
+            <h1 class="text-xl font-semibold ml-5">Smart Family Forum</h1>
             <div>
                 <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
-                <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Logout</a>
+                <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
         </div>
     </header>
@@ -67,7 +73,7 @@ $result = $conn->query($sql);
                             </span>
                         </div>
                         <p class="mt-4 text-gray-700">
-                            <?php echo nl2br(htmlspecialchars($row['isi'])); ?>
+                            <?php echo nl2br(htmlspecialchars(limit_words($row['isi'], 50))); // Batasi isi sampai 50 kata ?>
                         </p>
                     </div>
                 <?php endwhile; ?>

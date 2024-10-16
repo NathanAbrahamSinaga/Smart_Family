@@ -61,10 +61,10 @@ $stmt->close();
     <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold">Smart Family Forum</h1>
+            <h1 class="text-xl font-semibold ml-5">Smart Family Forum</h1>
             <div>
                 <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
-                <a href="../../server/validasi/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Logout</a>
+                <a href="../../server/validasi/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
         </div>
     </header>
