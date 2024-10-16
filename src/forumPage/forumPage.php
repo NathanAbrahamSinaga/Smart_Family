@@ -20,12 +20,16 @@ $sql = "SELECT tf.id, tf.judul, tf.isi, tf.tanggal_dibuat, uf.username
         ORDER BY tf.tanggal_dibuat DESC";
 $result = $conn->query($sql);
 
-// Fungsi untuk membatasi jumlah kata
-function limit_words($string, $word_limit) {
-    $words = explode(' ', $string);
-    return implode(' ', array_slice($words, 0, $word_limit)) . (count($words) > $word_limit ? '...' : '');
+// Fungsi untuk membatasi kata dalam isi
+function truncateText($text, $limit = 50) {
+    $words = explode(' ', $text);
+    if (count($words) > $limit) {
+        return implode(' ', array_slice($words, 0, $limit)) . '...';
+    }
+    return $text;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -72,9 +76,6 @@ function limit_words($string, $word_limit) {
                                 by <?php echo htmlspecialchars($row['username']); ?> on <?php echo date("d M Y, H:i", strtotime($row['tanggal_dibuat'])); ?>
                             </span>
                         </div>
-                        <p class="mt-4 text-gray-700">
-                            <?php echo nl2br(htmlspecialchars(limit_words($row['isi'], 50))); // Batasi isi sampai 50 kata ?>
-                        </p>
                     </div>
                 <?php endwhile; ?>
             </div>
