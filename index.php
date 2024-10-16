@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Smart Family</title>
         <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
-        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="assets/css/style.css">
     </head>
     <body>
         <!-- Container Utama -->
@@ -21,8 +21,9 @@
             <!-- Tombol-Tombol -->
             <div class="d-flex flex-column flex-md-row justify-content-center mb-4">
                 <a href="src/loginPage/loginAdmin.php" class="btn btn-primary mb-2 mb-md-0 me-md-2">Login Admin</a>
-                <a href="src/loginPage/loginForum.php" class="btn btn-primary mb-2 mb-md-0 me-md-2">Forum</a>
-                <a href="src/loginPage/tarombo.php" class="btn btn-primary">Tarombo</a>
+                <a href="src/loginPage/loginForumPage.php" class="btn btn-primary mb-2 mb-md-0 me-md-2">Forum</a>
+                <a href="src/taromboPage/tarombo.php" class="btn btn-primary">Tarombo</a>
+                <a href="server/addAdmin.php" class="btn btn-primary">Add admin</a>
             </div>
         </div>
 

@@ -9,7 +9,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $username = $_POST["username"];
+    $username = trim($_POST["username"]);
     $password = $_POST["password"];
 
     $stmt = $conn->prepare("SELECT id, username, password FROM admin WHERE username = ?");
@@ -22,21 +22,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $row['password'])) {
             $_SESSION["user_id"] = $row['id'];
             $_SESSION["username"] = $row['username'];
-            header("location: /src/adminPage/adminPage.php");
+            header("Location: " . BASE_URL . "src/adminPage/adminPage.php");
             exit();
         } else {
-            header("location: /src/loginPage/loginAdmin.php?login_gagal=password");
+            header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php?login_gagal=password");
             exit();
         }
     } else {
-        header("location: /src/loginPage/loginAdmin.php?login_gagal=username");
+        header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php?login_gagal=username");
         exit();
     }
 
     $stmt->close();
     $conn->close();
 } else {
-    header("location: /src/loginPage/loginAdmin.php");
+    // Menggunakan BASE_URL
+    header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
     exit();
 }
 ?>
