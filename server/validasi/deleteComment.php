@@ -15,34 +15,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $comment_id = intval($_POST["comment_id"]);
     $user_id = $_SESSION["user_id"];
+    $topic_id = null;
 
-    // Mulai transaksi untuk memastikan konsistensi data
+    // Begin transaction for data consistency
     $conn->begin_transaction();
 
     try {
-        // Verifikasi bahwa pengguna adalah penulis komentar
-        $stmt = $conn->prepare("SELECT id_penulis FROM komentar_forum WHERE id = ?");
+        // Verify the user is the author of the comment
+        $stmt = $conn->prepare("SELECT id_penulis, id_topik FROM komentar_forum WHERE id = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare");
         }
 
         $stmt->bind_param("i", $comment_id);
         $stmt->execute();
-        $stmt->bind_result($id_penulis);
+        $stmt->bind_result($id_penulis, $topic_id);
         if ($stmt->fetch()) {
             if ($id_penulis != $user_id) {
-                // Tidak berwenang
+                // Unauthorized
                 $stmt->close();
                 throw new Exception("unauthorized");
             }
         } else {
-            // Komentar tidak ditemukan
+            // Comment not found
             $stmt->close();
             throw new Exception("not_found");
         }
         $stmt->close();
 
-        // Hapus komentar
+        // Delete the comment
         $stmt = $conn->prepare("DELETE FROM komentar_forum WHERE id = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare_delete_comment");
@@ -53,29 +54,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         $stmt->close();
 
-        // Commit transaksi
+        // Commit the transaction
         $conn->commit();
 
-        // Ambil ID topik untuk redirect kembali
-        $stmt = $conn->prepare("SELECT id_topik FROM komentar_forum WHERE id = ?");
-        if (!$stmt) {
-            throw new Exception("stmt_prepare_fetch_topik");
-        }
-        $stmt->bind_param("i", $comment_id);
-        $stmt->execute();
-        $stmt->bind_result($id_topik);
-        if ($stmt->fetch()) {
-            // Jika komentar dihapus, id_topik tidak akan ada, jadi kita harus menangani ini secara terpisah
-            // Sebagai gantinya, kita akan ambil dari topikForum.php sebelumnya
-            // Maka, kita harus mengirimkan id_topik melalui POST atau GET
-            // Untuk kesederhanaan, kita akan redirect kembali ke topikForum.php dengan menggunakan referer
-            $stmt->close();
+        // Redirect back to the topic page
+        if ($topic_id !== null) {
+            header("Location: " . BASE_URL . "src/forumPage/topikForum.php?id=" . $topic_id . "&delete_comment_sukses=1");
+        } else {
             header("Location: " . $_SERVER['HTTP_REFERER'] . "?delete_comment_sukses=1");
-            exit();
         }
-        $stmt->close();
+        exit();
     } catch (Exception $e) {
-        // Rollback transaksi jika terjadi error
+        // Rollback the transaction in case of error
         $conn->rollback();
 
         $error = $e->getMessage();
@@ -89,8 +79,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $redirect = "stmt_prepare_delete_comment";
         } elseif ($error == "database") {
             $redirect = "database";
-        } elseif ($error == "stmt_prepare_fetch_topik") {
-            $redirect = "stmt_prepare_fetch_topik";
         } else {
             $redirect = "unknown_error";
         }

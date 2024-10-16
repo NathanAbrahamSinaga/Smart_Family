@@ -85,7 +85,7 @@ $result = $conn->query($sql);
     </footer>
 
     <!-- Footer Fixed (Ditampilkan saat tidak ada scroll) -->
-    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center hidden">
+    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center">
         <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
 
