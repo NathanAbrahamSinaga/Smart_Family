@@ -22,7 +22,7 @@ if ($conn->connect_error) {
 }
 
 // Ambil detail forum
-$stmt = $conn->prepare("SELECT tf.judul, tf.isi, tf.tanggal_dibuat, uf.username 
+$stmt = $conn->prepare("SELECT tf.judul, tf.isi, tf.tanggal_dibuat, uf.username, tf.id_pembuat 
                         FROM topik_forum tf 
                         JOIN users_forum uf ON tf.id_pembuat = uf.id 
                         WHERE tf.id = ?");
@@ -39,7 +39,7 @@ $forum = $result->fetch_assoc();
 $stmt->close();
 
 // Ambil komentar
-$stmt = $conn->prepare("SELECT cf.isi, cf.tanggal_dibuat, uf.username 
+$stmt = $conn->prepare("SELECT cf.id, cf.isi, cf.tanggal_dibuat, uf.username, cf.id_penulis 
                         FROM komentar_forum cf 
                         JOIN users_forum uf ON cf.id_penulis = uf.id 
                         WHERE cf.id_topik = ? 
@@ -64,7 +64,7 @@ $stmt->close();
             <h1 class="text-xl font-semibold">Smart Family Forum</h1>
             <div>
                 <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
-                <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Logout</a>
+                <a href="../../server/validasi/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Logout</a>
             </div>
         </div>
     </header>
@@ -90,6 +90,14 @@ $stmt->close();
                                 <span class="text-sm text-gray-500"><?php echo date("d M Y, H:i", strtotime($comment['tanggal_dibuat'])); ?></span>
                             </div>
                             <p class="mt-2 text-gray-700"><?php echo nl2br(htmlspecialchars($comment['isi'])); ?></p>
+                            
+                            <?php if ($comment['id_penulis'] == $_SESSION["user_id"]): ?>
+                                <!-- Tombol Hapus Komentar -->
+                                <form action="../../server/validasi/deleteComment.php" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus komentar ini?');">
+                                    <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
+                                    <button type="submit" class="mt-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Hapus</button>
+                                </form>
+                            <?php endif; ?>
                         </div>
                     <?php endwhile; ?>
                 </div>
@@ -107,13 +115,58 @@ $stmt->close();
                     </div>
                     <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Submit</button>
                 </form>
+
+                <!-- Pesan Feedback -->
+                <?php
+                    if(isset($_GET['comment_gagal'])) {
+                        $message = '';
+                        $alertClass = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4';
+                        if($_GET['comment_gagal'] == 'empty') {
+                            $message = 'Silakan isi komentar Anda.';
+                        } elseif($_GET['comment_gagal'] == 'stmt_prepare') {
+                            $message = 'Terjadi kesalahan pada sistem. Silakan coba lagi.';
+                        } elseif($_GET['comment_gagal'] == 'database') {
+                            $message = 'Gagal menambahkan komentar. Silakan coba lagi.';
+                        }
+                        echo "<div class=\"$alertClass\" role=\"alert\">$message</div>";
+                    }
+
+                    if(isset($_GET['comment_sukses'])) {
+                        echo '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4" role="alert">Komentar berhasil ditambahkan.</div>';
+                    }
+
+                    if(isset($_GET['delete_comment_gagal'])) {
+                        $message = '';
+                        $alertClass = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4';
+                        if($_GET['delete_comment_gagal'] == 'stmt_prepare') {
+                            $message = 'Terjadi kesalahan pada sistem. Silakan coba lagi.';
+                        } elseif($_GET['delete_comment_gagal'] == 'unauthorized') {
+                            $message = 'Anda tidak memiliki izin untuk menghapus komentar ini.';
+                        } elseif($_GET['delete_comment_gagal'] == 'not_found') {
+                            $message = 'Komentar tidak ditemukan.';
+                        } elseif($_GET['delete_comment_gagal'] == 'stmt_prepare_delete_comment') {
+                            $message = 'Terjadi kesalahan saat menghapus komentar. Silakan coba lagi.';
+                        } elseif($_GET['delete_comment_gagal'] == 'database') {
+                            $message = 'Gagal menghapus komentar. Silakan coba lagi.';
+                        } else {
+                            $message = 'Terjadi kesalahan yang tidak dikenal. Silakan coba lagi.';
+                        }
+                        echo "<div class=\"$alertClass\" role=\"alert\">$message</div>";
+                    }
+
+                    if(isset($_GET['delete_comment_sukses'])) {
+                        echo '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4" role="alert">Komentar berhasil dihapus.</div>';
+                    }
+                ?>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
-        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
+    <footer class="bg-blue-500 text-white py-4 mt-20">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Smart Family. All rights reserved.</p>
+        </div>
     </footer>
 </body>
 </html>

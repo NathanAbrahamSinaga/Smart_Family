@@ -11,14 +11,14 @@ require_once '../../server/config.php';
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/output.css">
 </head>
-<body class="bg-gray-100">
-    <!-- Container Utama -->
-    <div class="container mx-auto text-center mt-20">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <!-- Kotak Form Register -->
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
         <!-- Judul -->
-        <h2 class="text-3xl font-semibold mb-8">Register Forum</h2>
+        <h2 class="text-3xl font-semibold mb-6 text-center">Register Forum</h2>
 
         <!-- Form Register -->
-        <form action="<?php echo BASE_URL; ?>server/registerUser.php" method="POST" class="max-w-sm mx-auto">
+        <form action="<?php echo BASE_URL; ?>server/registerUser.php" method="POST">
             <div class="mb-4">
                 <label for="nama_lengkap" class="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap</label>
                 <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nama_lengkap" name="nama_lengkap" required>
@@ -35,7 +35,7 @@ require_once '../../server/config.php';
                 <label for="confirm_password" class="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Password</label>
                 <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="confirm_password" name="confirm_password" required>
             </div>
-            <button type="submit" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Register</button>
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Register</button>
         </form>
 
         <?php
@@ -56,14 +56,9 @@ require_once '../../server/config.php';
         ?>
 
         <!-- Link Kembali ke Halaman Forum -->
-        <div class="mt-8">
-            <a href="loginForumPage.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Kembali</a>
+        <div class="mt-6 text-center">
+            <a href="loginForumPage.php" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Kembali</a>
         </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
-        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
-    </footer>
 </body>
 </html>

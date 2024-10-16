@@ -29,7 +29,7 @@ $stmt->close();
     <title>Daftar Forum Saya - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 flex flex-col min-h-screen">
     <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
@@ -42,7 +42,7 @@ $stmt->close();
     </header>
 
     <!-- Container Utama -->
-    <div class="container mx-auto mt-8 px-4">
+    <div class="container mx-auto mt-8 px-4 flex-grow">
         <h2 class="text-2xl font-semibold mb-6">Daftar Forum Saya</h2>
 
         <!-- Tombol Tambah Forum -->
@@ -92,10 +92,40 @@ $stmt->close();
         ?>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
+    <!-- Footer Static (Ditampilkan saat ada scroll) -->
+    <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-20">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Smart Family. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Footer Fixed (Ditampilkan saat tidak ada scroll) -->
+    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center hidden">
         <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
+
+    <!-- JavaScript untuk Menentukan Footer yang Ditampilkan -->
+    <script>
+        function toggleFooter() {
+            const footerStatic = document.getElementById('footer-static');
+            const footerFixed = document.getElementById('footer-fixed');
+            const isScrollable = document.body.scrollHeight > window.innerHeight;
+            
+            if (isScrollable) {
+                footerStatic.classList.remove('hidden');
+                footerFixed.classList.add('hidden');
+            } else {
+                footerStatic.classList.add('hidden');
+                footerFixed.classList.remove('hidden');
+            }
+        }
+
+        // Jalankan fungsi saat halaman dimuat
+        window.addEventListener('load', toggleFooter);
+
+        // Jalankan fungsi saat jendela di-resize
+        window.addEventListener('resize', toggleFooter);
+    </script>
 </body>
 </html>
 <?php

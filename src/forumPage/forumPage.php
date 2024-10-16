@@ -69,9 +69,6 @@ $result = $conn->query($sql);
                         <p class="mt-4 text-gray-700">
                             <?php echo nl2br(htmlspecialchars($row['isi'])); ?>
                         </p>
-                        <div class="mt-4">
-                            <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-500 hover:underline">View Comments</a>
-                        </div>
                     </div>
                 <?php endwhile; ?>
             </div>
@@ -80,10 +77,40 @@ $result = $conn->query($sql);
         <?php endif; ?>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
+    <!-- Footer Static (Ditampilkan saat ada scroll) -->
+    <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-20">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Smart Family. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Footer Fixed (Ditampilkan saat tidak ada scroll) -->
+    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center hidden">
         <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
+
+    <!-- JavaScript untuk Menentukan Footer yang Ditampilkan -->
+    <script>
+        function toggleFooter() {
+            const footerStatic = document.getElementById('footer-static');
+            const footerFixed = document.getElementById('footer-fixed');
+            const isScrollable = document.body.scrollHeight > window.innerHeight;
+            
+            if (isScrollable) {
+                footerStatic.classList.remove('hidden');
+                footerFixed.classList.add('hidden');
+            } else {
+                footerStatic.classList.add('hidden');
+                footerFixed.classList.remove('hidden');
+            }
+        }
+
+        // Jalankan fungsi saat halaman dimuat
+        window.addEventListener('load', toggleFooter);
+
+        // Jalankan fungsi saat jendela di-resize
+        window.addEventListener('resize', toggleFooter);
+    </script>
 </body>
 </html>
 <?php

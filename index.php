@@ -27,14 +27,44 @@
             <a href="src/loginPage/loginForumPage.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 Forum
             </a>
-            <a href="src/taromboPage/tarombo.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+            <a href="src/loginPage/loginTarombo.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 Tarombo
             </a>
         </div>
 
-        <!-- Footer -->
-        <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
-            <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
-        </footer>
+        <!-- Footer Static (Ditampilkan saat ada scroll) -->
+    <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-20">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Smart Family. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Footer Fixed (Ditampilkan saat tidak ada scroll) -->
+    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center hidden">
+        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript untuk Menentukan Footer yang Ditampilkan -->
+    <script>
+        function toggleFooter() {
+            const footerStatic = document.getElementById('footer-static');
+            const footerFixed = document.getElementById('footer-fixed');
+            const isScrollable = document.body.scrollHeight > window.innerHeight;
+            
+            if (isScrollable) {
+                footerStatic.classList.remove('hidden');
+                footerFixed.classList.add('hidden');
+            } else {
+                footerStatic.classList.add('hidden');
+                footerFixed.classList.remove('hidden');
+            }
+        }
+
+        // Jalankan fungsi saat halaman dimuat
+        window.addEventListener('load', toggleFooter);
+
+        // Jalankan fungsi saat jendela di-resize
+        window.addEventListener('resize', toggleFooter);
+    </script>
     </body>
 </html>
