@@ -31,9 +31,13 @@ require_once '../../server/config.php';
                 <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
                 <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" required>
             </div>
-            <div class="mb-6">
+            <div class="mb-4">
                 <label for="confirm_password" class="block text-gray-700 text-sm font-bold mb-2">Konfirmasi Password</label>
                 <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="confirm_password" name="confirm_password" required>
+            </div>
+            <div class="mb-6">
+                <label for="kode" class="block text-gray-700 text-sm font-bold mb-2">Kode Registrasi</label>
+                <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="kode" name="kode" required>
             </div>
             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Register</button>
         </form>
@@ -48,6 +52,8 @@ require_once '../../server/config.php';
                     $message = 'Username sudah digunakan';
                 } elseif($_GET['register_gagal'] == 'database') {
                     $message = 'Gagal menyimpan data. Silakan coba lagi.';
+                } elseif($_GET['register_gagal'] == 'kode') {
+                    $message = 'Kode registrasi tidak valid';
                 }
                 echo "<div class=\"$alertClass\" role=\"alert\">$message</div>";
             } elseif(isset($_GET['register_sukses'])) {

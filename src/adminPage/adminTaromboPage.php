@@ -95,6 +95,7 @@ ksort($members);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Tarombo - Smart Family</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/output.css">
     <style>
         table {
@@ -211,7 +212,7 @@ ksort($members);
                         <td><?php echo $member['domisili']; ?></td>
                         <td><img src="<?php echo $member['foto']; ?>" alt="Foto" width="50"></td>
                         <td>
-                            <button onclick="editMember(<?php echo htmlspecialchars(json_encode($member)); ?>)" class="bg-yellow-500 text-white p-1 rounded mr-2">Edit</button>
+                            <button onclick="editMember(<?php echo htmlspecialchars(json_encode($member)); ?>)" class="bg-green-500 text-white p-1 rounded mr-2">Edit</button>
                             <form action="" method="POST" class="inline-block">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?php echo $member['id']; ?>">

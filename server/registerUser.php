@@ -16,9 +16,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST["username"]);
     $password = $_POST["password"];
     $confirm_password = $_POST["confirm_password"];
+    $kode = trim($_POST["kode"]);
 
     // Validasi apakah semua field telah diisi
-    if (empty($nama_lengkap) || empty($username) || empty($password) || empty($confirm_password)) {
+    if (empty($nama_lengkap) || empty($username) || empty($password) || empty($confirm_password) || empty($kode)) {
         header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=lengkapi");
         exit();
     }
@@ -28,6 +29,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=password");
         exit();
     }
+
+    // Validasi kode
+    $stmt = $conn->prepare("SELECT kode FROM kode WHERE kode = ?");
+    if (!$stmt) {
+        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=stmt_prepare");
+        exit();
+    }
+    $stmt->bind_param("s", $kode);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows == 0) {
+        // Kode tidak valid
+        $stmt->close();
+        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=kode");
+        exit();
+    }
+
+    $stmt->close();
 
     // Cek apakah username sudah ada
     $stmt = $conn->prepare("SELECT id FROM users_forum WHERE username = ?");
