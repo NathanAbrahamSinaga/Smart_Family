@@ -15,7 +15,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         switch ($_POST['action']) {
             case 'add':
                 // Add new member
-                $stmt = $conn->prepare("INSERT INTO anggota (nama, jenis_kelamin, generasi, domisili, id_ayah, id_ibu, id_istri_1, id_istri_2, id_istri_3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $conn->prepare("INSERT INTO anggota (nama, jenis_kelamin, generasi, domisili, id_ayah, id_ibu, id_istri_1, id_istri_2, id_istri_3, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
                 // Prepare the parameters
                 $nama = $_POST['nama'];
@@ -27,8 +27,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
                 $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
                 $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
+                $foto = $_POST['foto'];
 
-                $stmt->bind_param("ssissiiii", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3);
+                $stmt->bind_param("ssissiiiis", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $foto);
                 
                 if ($stmt->execute()) {
                     $message = "Anggota baru berhasil ditambahkan.";
@@ -39,9 +40,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 break;
             case 'edit':
                 // Edit existing member
-                $stmt = $conn->prepare("UPDATE anggota SET nama=?, jenis_kelamin=?, generasi=?, domisili=?, id_ayah=?, id_ibu=?, id_istri_1=?, id_istri_2=?, id_istri_3=? WHERE id=?");
-                
-                // Prepare the parameters
+                $stmt = $conn->prepare("UPDATE anggota SET nama=?, jenis_kelamin=?, generasi=?, domisili=?, id_ayah=?, id_ibu=?, id_istri_1=?, id_istri_2=?, id_istri_3=?, foto=? WHERE id=?");
+
                 $nama = $_POST['nama'];
                 $jenis_kelamin = $_POST['jenis_kelamin'];
                 $generasi = $_POST['generasi'];
@@ -51,12 +51,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
                 $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
                 $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
+                $foto = $_POST['foto'];
                 $id = $_POST['id'];
 
-                $stmt->bind_param("ssissiiiii", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $id);
+                $stmt->bind_param("ssissiiiisi", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $foto, $id);
                 
                 if ($stmt->execute()) {
                     $message = "Data anggota berhasil diperbarui.";
+                } else {
+                    $message = "Error: " . $stmt->error;
+                }
+                $stmt->close();
+                break;
+            case 'delete':
+                // Delete member
+                $stmt = $conn->prepare("DELETE FROM anggota WHERE id=?");
+                $id = $_POST['id'];
+                $stmt->bind_param("i", $id);
+
+                if ($stmt->execute()) {
+                    $message = "Anggota berhasil dihapus.";
                 } else {
                     $message = "Error: " . $stmt->error;
                 }
@@ -72,7 +86,7 @@ $members = [];
 while ($row = $result->fetch_assoc()) {
     $members[$row['generasi']][] = $row;
 }
-ksort($members); // Sort generations in ascending order
+ksort($members);
 ?>
 
 <!DOCTYPE html>
@@ -107,131 +121,172 @@ ksort($members); // Sort generations in ascending order
     <?php endif; ?>
 
     <!-- Add New Member Form -->
-    <form action="" method="POST" class="bg-white p-6 rounded shadow mb-8">
-        <h2 class="text-xl font-bold mb-4">Tambah Anggota Baru</h2>
-        <input type="hidden" name="action" value="add">
-        <div class="grid grid-cols-2 gap-4">
-            <input type="text" name="nama" placeholder="Nama" required class="p-2 border rounded">
-            <select name="jenis_kelamin" required class="p-2 border rounded">
-                <option value="Laki-laki">Laki-laki</option>
-                <option value="Perempuan">Perempuan</option>
-            </select>
-            <input type="number" name="generasi" placeholder="Generasi" required class="p-2 border rounded">
-            <input type="text" name="domisili" placeholder="Domisili" class="p-2 border rounded">
-            <input type="number" name="id_ayah" placeholder="ID Ayah" class="p-2 border rounded">
-            <input type="number" name="id_ibu" placeholder="ID Ibu" class="p-2 border rounded">
-            <input type="number" name="id_istri_1" placeholder="ID Istri 1" class="p-2 border rounded">
-            <input type="number" name="id_istri_2" placeholder="ID Istri 2" class="p-2 border rounded">
-            <input type="number" name="id_istri_3" placeholder="ID Istri 3" class="p-2 border rounded">
+    <form id="memberForm" action="" method="POST" class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-4xl mx-auto">
+        <h2 id="formTitle" class="text-2xl font-semibold mb-6">Tambah Anggota Baru</h2>
+        <input type="hidden" name="action" id="formAction" value="add">
+        <input type="hidden" name="id" id="memberId">
+        <input type="hidden" name="foto" id="fotoInput">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div class="col-span-2">
+                <label for="imageUpload" class="block text-sm font-medium text-gray-700">Foto Profil</label>
+                <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <img id="previewImage" src="" alt="Preview" class="mt-4 max-w-xs rounded-lg shadow-md" style="display:none;">
+            </div>
+            
+            <div>
+                <label for="namaInput" class="block text-sm font-medium text-gray-700">Nama</label>
+                <input type="text" name="nama" id="namaInput" placeholder="Nama" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="jenisKelaminInput" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
+                <select name="jenis_kelamin" id="jenisKelaminInput" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="generasiInput" class="block text-sm font-medium text-gray-700">Generasi</label>
+                <input type="number" name="generasi" id="generasiInput" placeholder="Generasi" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="domisiliInput" class="block text-sm font-medium text-gray-700">Domisili</label>
+                <input type="text" name="domisili" id="domisiliInput" placeholder="Domisili" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="idAyahInput" class="block text-sm font-medium text-gray-700">ID Ayah (Optional)</label>
+                <input type="number" name="id_ayah" id="idAyahInput" placeholder="ID Ayah" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="idIbuInput" class="block text-sm font-medium text-gray-700">ID Ibu (Optional)</label>
+                <input type="number" name="id_ibu" id="idIbuInput" placeholder="ID Ibu" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="idIstri1Input" class="block text-sm font-medium text-gray-700">ID Istri 1 (Optional)</label>
+                <input type="number" name="id_istri_1" id="idIstri1Input" placeholder="ID Istri 1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="idIstri2Input" class="block text-sm font-medium text-gray-700">ID Istri 2 (Optional)</label>
+                <input type="number" name="id_istri_2" id="idIstri2Input" placeholder="ID Istri 2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="idIstri3Input" class="block text-sm font-medium text-gray-700">ID Istri 3 (Optional)</label>
+                <input type="number" name="id_istri_3" id="idIstri3Input" placeholder="ID Istri 3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
         </div>
-        <button type="submit" class="mt-4 bg-blue-500 text-white p-2 rounded">Tambah Anggota</button>
+        
+        <div class="flex justify-end mt-6">
+            <button type="submit" id="submitBtn" class="bg-blue-500 text-white px-6 py-2 rounded-md shadow-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Tambah Anggota</button>
+        </div>
     </form>
 
-    <!-- List of Members -->
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="text-xl font-bold mb-4">Daftar Anggota</h2>
-        <?php foreach ($members as $generation => $generationMembers): ?>
-            <h3 class="text-lg font-semibold mt-6 mb-2">Generasi <?php echo $generation; ?></h3>
-            <table class="w-full mb-4">
-                <thead>
+    <!-- Display Members -->
+    <?php foreach ($members as $generasi => $list): ?>
+        <h2 class="text-xl font-bold mb-4">Generasi <?php echo $generasi; ?></h2>
+        <table class="mb-8">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Jenis Kelamin</th>
+                    <th>Domisili</th>
+                    <th>Foto</th>
+                    <th>Opsi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($list as $member): ?>
                     <tr>
-                        <th>ID</th>
-                        <th>Nama</th>
-                        <th>Jenis Kelamin</th>
-                        <th>Domisili</th>
-                        <th>Aksi</th>
+                        <td><?php echo $member['id']; ?></td>
+                        <td><?php echo $member['nama']; ?></td>
+                        <td><?php echo $member['jenis_kelamin']; ?></td>
+                        <td><?php echo $member['domisili']; ?></td>
+                        <td><img src="<?php echo $member['foto']; ?>" alt="Foto" width="50"></td>
+                        <td>
+                            <button onclick="editMember(<?php echo htmlspecialchars(json_encode($member)); ?>)" class="bg-yellow-500 text-white p-1 rounded mr-2">Edit</button>
+                            <form action="" method="POST" class="inline-block">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="<?php echo $member['id']; ?>">
+                                <button type="submit" class="bg-red-500 text-white p-1 rounded" onclick="return confirm('Anda yakin ingin menghapus anggota ini?')">Hapus</button>
+                            </form>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($generationMembers as $member): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($member['id']); ?></td>
-                            <td><?php echo htmlspecialchars($member['nama']); ?></td>
-                            <td><?php echo htmlspecialchars($member['jenis_kelamin']); ?></td>
-                            <td><?php echo htmlspecialchars($member['domisili']); ?></td>
-                            <td>
-                                <button onclick="editMember(<?php echo $member['id']; ?>)" class="bg-yellow-500 text-white p-1 rounded">Edit</button>
-                                <form action="" method="POST" class="inline-block">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="id" value="<?php echo $member['id']; ?>">
-                                    <button type="submit" class="bg-red-500 text-white p-1 rounded" onclick="return confirm('Anda yakin ingin menghapus anggota ini?')">Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php endforeach; ?>
-    </div>
-
-    <!-- Edit Member Modal (hidden by default) -->
-    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" style="display: none;">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 class="text-lg font-bold mb-4">Edit Anggota</h3>
-            <form id="editForm" action="" method="POST">
-                <input type="hidden" name="action" value="edit">
-                <input type="hidden" name="id" id="edit_id">
-                <div class="mb-4">
-                    <input type="text" name="nama" id="edit_nama" placeholder="Nama" required class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <select name="jenis_kelamin" id="edit_jenis_kelamin" required class="w-full p-2 border rounded">
-                        <option value="Laki-laki">Laki-laki</option>
-                        <option value="Perempuan">Perempuan</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <input type="number" name="generasi" id="edit_generasi" placeholder="Generasi" required class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <input type="text" name="domisili" id="edit_domisili" placeholder="Domisili" class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <input type="number" name="id_ayah" id="edit_id_ayah" placeholder="ID Ayah" class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <input type="number" name="id_ibu" id="edit_id_ibu" placeholder="ID Ibu" class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <input type="number" name="id_istri_1" id="edit_id_istri_1" placeholder="ID Istri 1" class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <input type="number" name="id_istri_2" id="edit_id_istri_2" placeholder="ID Istri 2" class="w-full p-2 border rounded">
-                </div>
-                <div class="mb-4">
-                    <input type="number" name="id_istri_3" id="edit_id_istri_3" placeholder="ID Istri 3" class="w-full p-2 border rounded">
-                </div>
-                <div class="flex justify-end">
-                    <button type="button" onclick="closeEditModal()" class="bg-gray-500 text-white p-2 rounded mr-2">Batal</button>
-                    <button type="submit" class="bg-blue-500 text-white p-2 rounded">Simpan Perubahan</button>
-                </div>
-            </form>
-        </div>
-    </div>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php endforeach; ?>
 
     <script>
-        function editMember(id) {
-            // Fetch member data and populate the form
-            fetch(`get_member.php?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('edit_id').value = data.id;
-                    document.getElementById('edit_nama').value = data.nama;
-                    document.getElementById('edit_jenis_kelamin').value = data.jenis_kelamin;
-                    document.getElementById('edit_generasi').value = data.generasi;
-                    document.getElementById('edit_domisili').value = data.domisili;
-                    document.getElementById('edit_id_ayah').value = data.id_ayah;
-                    document.getElementById('edit_id_ibu').value = data.id_ibu;
-                    document.getElementById('edit_id_istri_1').value = data.id_istri_1;
-                    document.getElementById('edit_id_istri_2').value = data.id_istri_2;
-                    document.getElementById('edit_id_istri_3').value = data.id_istri_3;
-                    document.getElementById('editModal').style.display = 'block';
-                });
+        function editMember(member) {
+            document.getElementById('formTitle').innerText = 'Edit Anggota';
+            document.getElementById('formAction').value = 'edit';
+            document.getElementById('memberId').value = member.id;
+            document.getElementById('namaInput').value = member.nama;
+            document.getElementById('jenisKelaminInput').value = member.jenis_kelamin;
+            document.getElementById('generasiInput').value = member.generasi;
+            document.getElementById('domisiliInput').value = member.domisili;
+            document.getElementById('idAyahInput').value = member.id_ayah;
+            document.getElementById('idIbuInput').value = member.id_ibu;
+            document.getElementById('idIstri1Input').value = member.id_istri_1;
+            document.getElementById('idIstri2Input').value = member.id_istri_2;
+            document.getElementById('idIstri3Input').value = member.id_istri_3;
+            document.getElementById('fotoInput').value = member.foto;
+            document.getElementById('previewImage').src = member.foto;
+            document.getElementById('previewImage').style.display = 'block';
+            document.getElementById('submitBtn').innerText = 'Update Anggota';
+            
+            // Scroll to the form
+            document.getElementById('memberForm').scrollIntoView({behavior: 'smooth'});
         }
 
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
+        // Image preview and upload functionality
+        // Di adminTaromboPage.php, ubah event listener untuk image upload
+        document.getElementById('imageUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                // Ubah path sesuai dengan struktur folder
+                fetch('../../uploads/imgur_upload.php', {  // Perhatikan path relatif ini
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.success) {
+                            document.getElementById('previewImage').src = data.link;
+                            document.getElementById('previewImage').style.display = 'block';
+                            document.getElementById('fotoInput').value = data.link;
+                        } else {
+                            throw new Error(data.error || 'Upload failed');
+                        }
+                    } catch (e) {
+                        console.error('Raw response:', text);
+                        throw new Error('Invalid JSON response: ' + text);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Upload failed: ' + error.message);
+                });
+            }
+        });
     </script>
 </body>
 </html>

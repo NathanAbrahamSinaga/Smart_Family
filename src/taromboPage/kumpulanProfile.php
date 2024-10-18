@@ -13,6 +13,20 @@ if ($conn->connect_error) {
 }
 
 $search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
+
+if (isset($_GET['id']) && empty($search)) {
+    $memberId = $conn->real_escape_string($_GET['id']);
+    $nameQuery = "SELECT nama FROM anggota WHERE id = ?";
+    $stmt = $conn->prepare($nameQuery);
+    $stmt->bind_param("i", $memberId);
+    $stmt->execute();
+    $nameResult = $stmt->get_result();
+    if ($nameRow = $nameResult->fetch_assoc()) {
+        $search = $nameRow['nama'];
+    }
+    $stmt->close();
+}
+
 $whereClause = $search ? "WHERE a.nama LIKE '%$search%'" : "";
 
 $query = "
@@ -45,49 +59,128 @@ $result = $conn->query($query);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kumpulan Profile - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
-<body class="bg-gray-100 p-8">
-    <h1 class="text-3xl font-bold mb-6">Kumpulan Profile Keluarga</h1>
-    
-    <!-- Search Form -->
-    <form action="" method="GET" class="mb-8">
-        <input type="text" name="search" placeholder="Cari anggota keluarga..." value="<?php echo htmlspecialchars($search); ?>" class="p-2 border rounded">
-        <button type="submit" class="bg-blue-500 text-white p-2 rounded">Cari</button>
-    </form>
-
-    <!-- Profile Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <?php while ($row = $result->fetch_assoc()): ?>
-            <div class="bg-white p-6 rounded shadow">
-                <img src="<?php echo $row['foto'] ? htmlspecialchars($row['foto']) : '../../assets/img/profile_pictures/default.jpg'; ?>" alt="<?php echo htmlspecialchars($row['nama']); ?>" class="w-32 h-32 rounded-full mx-auto mb-4">
-                <h2 class="text-xl font-bold mb-2"><?php echo htmlspecialchars($row['nama']); ?></h2>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                    <p class="font-semibold">Jenis Kelamin:</p>
-                    <p><?php echo htmlspecialchars($row['jenis_kelamin']); ?></p>
-                    <p class="font-semibold">Generasi:</p>
-                    <p><?php echo htmlspecialchars($row['generasi']); ?></p>
-                    <p class="font-semibold">Domisili:</p>
-                    <p><?php echo htmlspecialchars($row['domisili']); ?></p>
-                    <p class="font-semibold">Ayah:</p>
-                    <p><?php echo htmlspecialchars($row['nama_ayah'] ?? 'Tidak diketahui'); ?></p>
-                    <p class="font-semibold">Ibu:</p>
-                    <p><?php echo htmlspecialchars($row['nama_ibu'] ?? 'Tidak diketahui'); ?></p>
-                    <p class="font-semibold">Pasangan:</p>
-                    <p>
-                        <?php
-                        $pasangan = array_filter([$row['nama_istri_1'], $row['nama_istri_2'], $row['nama_istri_3']]);
-                        echo $pasangan ? htmlspecialchars(implode(', ', $pasangan)) : 'Tidak ada';
-                        ?>
-                    </p>
-                    <p class="font-semibold">Anak:</p>
-                    <p><?php echo $row['nama_anak'] ? htmlspecialchars($row['nama_anak']) : 'Tidak ada'; ?></p>
-                </div>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Header (kept as is) -->
+    <header class="bg-blue-500 text-white py-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-semibold ml-5">Smart Family - Kumpulan Profile</h1>
+            <div>
+                <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
+                <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
-        <?php endwhile; ?>
-    </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Kumpulan Profile Keluarga</h2>
+                <p class="text-gray-600">Jelajahi dan temukan anggota keluarga dalam silsilah Smart Family.</p>
+            </div>
+            <div class="mt-4 md:mt-0 w-full md:w-auto">
+                <form action="" method="GET" class="flex items-center gap-2">
+                    <input type="text" name="search" placeholder="Cari anggota keluarga..." value="<?php echo htmlspecialchars($search); ?>" class="w-full md:w-64 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out">
+                        Cari
+                    </button>
+                </form>
+                <?php if ($search): ?>
+                    <a href="?" class="text-blue-500 hover:underline text-sm mt-1 inline-block">Reset pencarian</a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Profile Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <?php if ($result && $result->num_rows > 0): ?>
+                <?php while ($row = $result->fetch_assoc()): ?>
+                    <div x-data="{ open: false }" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                        <div class="p-4">
+                            <img src="<?php echo $row['foto'] ? htmlspecialchars($row['foto']) : '../../assets/img/profile_pictures/default.jpg'; ?>" 
+                                alt="<?php echo htmlspecialchars($row['nama']); ?>" 
+                                class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg">
+                            <h3 class="text-xl font-semibold text-center mb-2"><?php echo htmlspecialchars($row['nama']); ?></h3>
+                            <p class="text-gray-600 text-center mb-4"><?php echo htmlspecialchars($row['generasi']); ?> Generation</p>
+                            <button @click="open = !open" class="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-300 ease-in-out">
+                                Lihat Detail
+                            </button>
+                        </div>
+                        <div x-show="open" class="p-4 border-t">
+                            <?php if (!empty($row['jenis_kelamin'])): ?>
+                                <p><strong>Jenis Kelamin:</strong> <?php echo htmlspecialchars($row['jenis_kelamin']); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($row['domisili'])): ?>
+                                <p><strong>Domisili:</strong> <?php echo htmlspecialchars($row['domisili']); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($row['nama_ayah'])): ?>
+                                <p><strong>Ayah:</strong> <?php echo htmlspecialchars($row['nama_ayah']); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($row['nama_ibu'])): ?>
+                                <p><strong>Ibu:</strong> <?php echo htmlspecialchars($row['nama_ibu']); ?></p>
+                            <?php endif; ?>
+                            <?php
+                            $pasangan = array_filter([$row['nama_istri_1'], $row['nama_istri_2'], $row['nama_istri_3']]);
+                            if (!empty($pasangan)): ?>
+                                <p><strong>Pasangan:</strong> <?php echo htmlspecialchars(implode(', ', $pasangan)); ?></p>
+                            <?php endif; ?>
+                            <?php if (!empty($row['nama_anak'])): ?>
+                                <p><strong>Anak:</strong> <?php echo htmlspecialchars($row['nama_anak']); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-500">Tidak ada anggota keluarga yang ditemukan<?php echo $search ? ' untuk pencarian "'.htmlspecialchars($search).'"' : ''; ?>.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Pagination (if needed) -->
+        <div class="mt-8 flex justify-center">
+            <!-- Add pagination logic here -->
+        </div>
+
+        <!-- Back button -->
+        <div class="mt-8">
+            <a href="tarombo.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out">Kembali ke Tarombo</a>
+        </div>
+    </main>
+
+    <!-- Footer Static -->
+    <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-auto">
+        <div class="container mx-auto text-center">
+            <p>&copy; 2024 Smart Family. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Footer Fixed -->
+    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center">
+        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript to Toggle Footer -->
+    <script>
+        function toggleFooter() {
+            const footerStatic = document.getElementById('footer-static');
+            const footerFixed = document.getElementById('footer-fixed');
+            const isScrollable = document.body.scrollHeight > window.innerHeight;
+            
+            if (isScrollable) {
+                footerStatic.classList.remove('hidden');
+                footerFixed.classList.add('hidden');
+            } else {
+                footerStatic.classList.add('hidden');
+                footerFixed.classList.remove('hidden');
+            }
+        }
+
+        window.addEventListener('load', toggleFooter);
+        window.addEventListener('resize', toggleFooter);
+    </script>
 </body>
 </html>
-
-<?php
-$conn->close();
-?>
