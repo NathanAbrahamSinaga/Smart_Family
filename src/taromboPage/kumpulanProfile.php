@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Pastikan user sudah login
 if (!isset($_SESSION["user_id"])) {
     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
     exit();
@@ -13,36 +12,30 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Function to get all members or search results
-function getMembers($conn, $search = '') {
-    $sql = "SELECT a.*, 
-                   i1.nama AS nama_istri_1, 
-                   i2.nama AS nama_istri_2, 
-                   o1.nama AS nama_orang_tua_1, 
-                   o2.nama AS nama_orang_tua_2
-            FROM anggota a
-            LEFT JOIN anggota i1 ON a.id_istri_1 = i1.id
-            LEFT JOIN anggota i2 ON a.id_istri_2 = i2.id
-            LEFT JOIN anggota o1 ON a.id_orang_tua_1 = o1.id
-            LEFT JOIN anggota o2 ON a.id_orang_tua_2 = o2.id
-            WHERE a.nama LIKE ?
-            ORDER BY a.nama";
-    $stmt = $conn->prepare($sql);
-    $searchParam = "%$search%";
-    $stmt->bind_param("s", $searchParam);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $members = [];
-    while ($row = $result->fetch_assoc()) {
-        $members[] = $row;
-    }
-    $stmt->close();
-    return $members;
-}
+$search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
+$whereClause = $search ? "WHERE a.nama LIKE '%$search%'" : "";
 
-$search = isset($_GET['search']) ? $_GET['search'] : '';
-$members = getMembers($conn, $search);
+$query = "
+    SELECT a.*, 
+           ayah.nama as nama_ayah, 
+           ibu.nama as nama_ibu, 
+           istri1.nama as nama_istri_1,
+           istri2.nama as nama_istri_2,
+           istri3.nama as nama_istri_3,
+           GROUP_CONCAT(DISTINCT anak.nama ORDER BY anak.nama ASC SEPARATOR ', ') as nama_anak
+    FROM anggota a
+    LEFT JOIN anggota ayah ON a.id_ayah = ayah.id
+    LEFT JOIN anggota ibu ON a.id_ibu = ibu.id
+    LEFT JOIN anggota istri1 ON a.id_istri_1 = istri1.id
+    LEFT JOIN anggota istri2 ON a.id_istri_2 = istri2.id
+    LEFT JOIN anggota istri3 ON a.id_istri_3 = istri3.id
+    LEFT JOIN anggota anak ON anak.id_ayah = a.id OR anak.id_ibu = a.id
+    $whereClause
+    GROUP BY a.id
+    ORDER BY a.nama
+";
 
+$result = $conn->query($query);
 ?>
 
 <!DOCTYPE html>
@@ -52,51 +45,45 @@ $members = getMembers($conn, $search);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kumpulan Profile - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
-    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto p-8">
-        <h1 class="text-3xl font-semibold mb-6">Kumpulan Profile Anggota Keluarga</h1>
+<body class="bg-gray-100 p-8">
+    <h1 class="text-3xl font-bold mb-6">Kumpulan Profile Keluarga</h1>
+    
+    <!-- Search Form -->
+    <form action="" method="GET" class="mb-8">
+        <input type="text" name="search" placeholder="Cari anggota keluarga..." value="<?php echo htmlspecialchars($search); ?>" class="p-2 border rounded">
+        <button type="submit" class="bg-blue-500 text-white p-2 rounded">Cari</button>
+    </form>
 
-        <!-- Search Form -->
-        <form action="" method="GET" class="mb-8">
-            <div class="flex">
-                <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" placeholder="Cari nama anggota..." class="flex-grow p-2 border rounded-l">
-                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-r">Cari</button>
-            </div>
-        </form>
-
-        <!-- Members Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php foreach ($members as $member): ?>
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <h2 class="text-xl font-semibold mb-2"><?php echo htmlspecialchars($member['nama']); ?></h2>
-                    <img src="<?php echo $member['foto_url'] ? htmlspecialchars($member['foto_url']) : '/path/to/default/image.jpg'; ?>" alt="<?php echo htmlspecialchars($member['nama']); ?>" class="w-full h-48 object-cover mb-4 rounded">
-                    <p><strong>Jenis Kelamin:</strong> <?php echo htmlspecialchars($member['jenis_kelamin']); ?></p>
-                    <p><strong>Domisili:</strong> <?php echo htmlspecialchars($member['domisili']); ?></p>
-                    <p><strong>Generasi:</strong> <?php echo htmlspecialchars($member['generasi']); ?></p>
-                    <?php if ($member['nama_istri_1'] || $member['nama_istri_2']): ?>
-                        <p><strong>Istri:</strong> 
-                            <?php 
-                            echo htmlspecialchars($member['nama_istri_1'] ?? '');
-                            echo $member['nama_istri_1'] && $member['nama_istri_2'] ? ', ' : '';
-                            echo htmlspecialchars($member['nama_istri_2'] ?? '');
-                            ?>
-                        </p>
-                    <?php endif; ?>
-                    <?php if ($member['nama_orang_tua_1'] || $member['nama_orang_tua_2']): ?>
-                        <p><strong>Orang Tua:</strong> 
-                            <?php 
-                            echo htmlspecialchars($member['nama_orang_tua_1'] ?? '');
-                            echo $member['nama_orang_tua_1'] && $member['nama_orang_tua_2'] ? ', ' : '';
-                            echo htmlspecialchars($member['nama_orang_tua_2'] ?? '');
-                            ?>
-                        </p>
-                    <?php endif; ?>
-                    <!-- You can add more details here if needed -->
+    <!-- Profile Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <?php while ($row = $result->fetch_assoc()): ?>
+            <div class="bg-white p-6 rounded shadow">
+                <img src="<?php echo $row['foto'] ? htmlspecialchars($row['foto']) : '../../assets/img/profile_pictures/default.jpg'; ?>" alt="<?php echo htmlspecialchars($row['nama']); ?>" class="w-32 h-32 rounded-full mx-auto mb-4">
+                <h2 class="text-xl font-bold mb-2"><?php echo htmlspecialchars($row['nama']); ?></h2>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <p class="font-semibold">Jenis Kelamin:</p>
+                    <p><?php echo htmlspecialchars($row['jenis_kelamin']); ?></p>
+                    <p class="font-semibold">Generasi:</p>
+                    <p><?php echo htmlspecialchars($row['generasi']); ?></p>
+                    <p class="font-semibold">Domisili:</p>
+                    <p><?php echo htmlspecialchars($row['domisili']); ?></p>
+                    <p class="font-semibold">Ayah:</p>
+                    <p><?php echo htmlspecialchars($row['nama_ayah'] ?? 'Tidak diketahui'); ?></p>
+                    <p class="font-semibold">Ibu:</p>
+                    <p><?php echo htmlspecialchars($row['nama_ibu'] ?? 'Tidak diketahui'); ?></p>
+                    <p class="font-semibold">Pasangan:</p>
+                    <p>
+                        <?php
+                        $pasangan = array_filter([$row['nama_istri_1'], $row['nama_istri_2'], $row['nama_istri_3']]);
+                        echo $pasangan ? htmlspecialchars(implode(', ', $pasangan)) : 'Tidak ada';
+                        ?>
+                    </p>
+                    <p class="font-semibold">Anak:</p>
+                    <p><?php echo $row['nama_anak'] ? htmlspecialchars($row['nama_anak']) : 'Tidak ada'; ?></p>
                 </div>
-            <?php endforeach; ?>
-        </div>
+            </div>
+        <?php endwhile; ?>
     </div>
 </body>
 </html>

@@ -7,122 +7,72 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fungsi untuk mendapatkan semua anggota
-function getAllMembers($conn) {
-    $sql = "SELECT * FROM anggota ORDER BY generasi, nama";
-    $result = $conn->query($sql);
-    return $result->fetch_all(MYSQLI_ASSOC);
-}
+$message = '';
 
-// Fungsi untuk mendapatkan generasi tertinggi
-function getHighestGeneration($conn) {
-    $sql = "SELECT MAX(generasi) as max_gen FROM anggota";
-    $result = $conn->query($sql);
-    $row = $result->fetch_assoc();
-    return $row['max_gen'];
-}
+// Handle form submissions
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (isset($_POST['action'])) {
+        switch ($_POST['action']) {
+            case 'add':
+                // Add new member
+                $stmt = $conn->prepare("INSERT INTO anggota (nama, jenis_kelamin, generasi, domisili, id_ayah, id_ibu, id_istri_1, id_istri_2, id_istri_3) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                
+                // Prepare the parameters
+                $nama = $_POST['nama'];
+                $jenis_kelamin = $_POST['jenis_kelamin'];
+                $generasi = $_POST['generasi'];
+                $domisili = $_POST['domisili'];
+                $id_ayah = !empty($_POST['id_ayah']) ? $_POST['id_ayah'] : null;
+                $id_ibu = !empty($_POST['id_ibu']) ? $_POST['id_ibu'] : null;
+                $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
+                $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
+                $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
 
-$members = getAllMembers($conn);
-$highestGeneration = getHighestGeneration($conn);
+                $stmt->bind_param("ssissiiii", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3);
+                
+                if ($stmt->execute()) {
+                    $message = "Anggota baru berhasil ditambahkan.";
+                } else {
+                    $message = "Error: " . $stmt->error;
+                }
+                $stmt->close();
+                break;
+            case 'edit':
+                // Edit existing member
+                $stmt = $conn->prepare("UPDATE anggota SET nama=?, jenis_kelamin=?, generasi=?, domisili=?, id_ayah=?, id_ibu=?, id_istri_1=?, id_istri_2=?, id_istri_3=? WHERE id=?");
+                
+                // Prepare the parameters
+                $nama = $_POST['nama'];
+                $jenis_kelamin = $_POST['jenis_kelamin'];
+                $generasi = $_POST['generasi'];
+                $domisili = $_POST['domisili'];
+                $id_ayah = !empty($_POST['id_ayah']) ? $_POST['id_ayah'] : null;
+                $id_ibu = !empty($_POST['id_ibu']) ? $_POST['id_ibu'] : null;
+                $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
+                $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
+                $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
+                $id = $_POST['id'];
 
-// Handle member addition/editing
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['save_member'])) {
-    $id = isset($_POST['id']) ? intval($_POST['id']) : null;
-    $nama = $_POST['nama'];
-    $jenis_kelamin = $_POST['jenis_kelamin'];
-    $domisili = $_POST['domisili'];
-    $generasi = intval($_POST['generasi']);
-    $foto_url = $_POST['foto_url'];
-    $id_istri_1 = !empty($_POST['id_istri_1']) ? intval($_POST['id_istri_1']) : null;
-    $id_istri_2 = !empty($_POST['id_istri_2']) ? intval($_POST['id_istri_2']) : null;
-    $id_orang_tua_1 = !empty($_POST['id_orang_tua_1']) ? intval($_POST['id_orang_tua_1']) : null;
-    $id_orang_tua_2 = !empty($_POST['id_orang_tua_2']) ? intval($_POST['id_orang_tua_2']) : null;
-
-    if ($id) {
-        // Update existing member
-        $sql = "UPDATE anggota SET nama = ?, jenis_kelamin = ?, domisili = ?, generasi = ?, foto_url = ?, 
-                id_istri_1 = ?, id_istri_2 = ?, id_orang_tua_1 = ?, id_orang_tua_2 = ? WHERE id = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssissiiiii", $nama, $jenis_kelamin, $domisili, $generasi, $foto_url, 
-                          $id_istri_1, $id_istri_2, $id_orang_tua_1, $id_orang_tua_2, $id);
-    } else {
-        // Add new member
-        $sql = "INSERT INTO anggota (nama, jenis_kelamin, domisili, generasi, foto_url, id_istri_1, id_istri_2, id_orang_tua_1, id_orang_tua_2) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssissiii", $nama, $jenis_kelamin, $domisili, $generasi, $foto_url, 
-                          $id_istri_1, $id_istri_2, $id_orang_tua_1, $id_orang_tua_2);
+                $stmt->bind_param("ssissiiiii", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $id);
+                
+                if ($stmt->execute()) {
+                    $message = "Data anggota berhasil diperbarui.";
+                } else {
+                    $message = "Error: " . $stmt->error;
+                }
+                $stmt->close();
+                break;
+        }
     }
-
-    if ($stmt->execute()) {
-        $successMessage = $id ? "Member updated successfully." : "New member added successfully.";
-    } else {
-        $errorMessage = "Error: " . $stmt->error;
-    }
-    $stmt->close();
 }
 
-// Handle member deletion
-if (isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    $sql = "DELETE FROM anggota WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        $successMessage = "Member deleted successfully.";
-    } else {
-        $errorMessage = "Error deleting member: " . $stmt->error;
-    }
-    $stmt->close();
+// Fetch all members grouped by generation
+$result = $conn->query("SELECT * FROM anggota ORDER BY generasi, nama");
+$members = [];
+while ($row = $result->fetch_assoc()) {
+    $members[$row['generasi']][] = $row;
 }
-
-// Handle adding a new generation
-if (isset($_POST['add_generation'])) {
-    $newGeneration = $highestGeneration + 1;
-    $sql = "INSERT INTO anggota (nama, jenis_kelamin, generasi) VALUES (?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $placeholder = "Placeholder Member";
-    $gender = "Laki-laki";
-    $stmt->bind_param("ssi", $placeholder, $gender, $newGeneration);
-    if ($stmt->execute()) {
-        $successMessage = "New generation added successfully.";
-        $highestGeneration = $newGeneration;
-    } else {
-        $errorMessage = "Error adding new generation: " . $stmt->error;
-    }
-    $stmt->close();
-}
-
-// Handle deleting the highest generation
-if (isset($_POST['delete_generation'])) {
-    $sql = "DELETE FROM anggota WHERE generasi = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $highestGeneration);
-    if ($stmt->execute()) {
-        $successMessage = "Highest generation deleted successfully.";
-        $highestGeneration--;
-    } else {
-        $errorMessage = "Error deleting highest generation: " . $stmt->error;
-    }
-    $stmt->close();
-}
-
-// Fetch member data for editing
-$editMember = null;
-if (isset($_GET['edit'])) {
-    $editId = intval($_GET['edit']);
-    $sql = "SELECT * FROM anggota WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $editId);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $editMember = $result->fetch_assoc();
-    $stmt->close();
-}
-
-$members = getAllMembers($conn);
-$highestGeneration = getHighestGeneration($conn);
-
+ksort($members); // Sort generations in ascending order
 ?>
 
 <!DOCTYPE html>
@@ -132,90 +82,156 @@ $highestGeneration = getHighestGeneration($conn);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Tarombo - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="container mx-auto p-8">
-        <h1 class="text-3xl font-semibold mb-6">Admin Tarombo</h1>
-
-        <!-- Add/Edit Member Form -->
-        <form action="" method="POST" class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Add/Edit Member</h2>
-            <!-- Add form fields for member details here -->
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Save Member</button>
-        </form>
-
-        <!-- Generation Management -->
-        <div class="mb-8 bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Manage Generations</h2>
-            <p>Current highest generation: <?php echo $highestGeneration; ?></p>
-            <form action="" method="POST" class="mt-4">
-                <button type="submit" name="add_generation" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Add Generation</button>
-                <button type="submit" name="delete_generation" class="bg-red-500 text-white px-4 py-2 rounded">Delete Highest Generation</button>
-            </form>
+<body class="bg-gray-100 p-8">
+    <h1 class="text-3xl font-bold mb-6">Admin Tarombo</h1>
+    
+    <?php if ($message): ?>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <span class="block sm:inline"><?php echo $message; ?></span>
         </div>
+    <?php endif; ?>
 
-        <!-- Members List -->
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-xl font-semibold mb-4">Members List</h2>
-            <?php foreach (range(1, $highestGeneration) as $gen): ?>
-                <h3 class="text-lg font-semibold mt-4 mb-2">Generation <?php echo $gen; ?></h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <?php foreach ($members as $member): ?>
-                        <?php if ($member['generasi'] == $gen): ?>
-                            <div class="bg-gray-100 p-4 rounded">
-                                <h4 class="font-semibold"><?php echo htmlspecialchars($member['nama']); ?></h4>
-                                <p>Gender: <?php echo htmlspecialchars($member['jenis_kelamin']); ?></p>
-                                <p>Domisili: <?php echo htmlspecialchars($member['domisili']); ?></p>
-                                <div class="mt-2">
-                                    <a href="?edit=<?php echo $member['id']; ?>" class="text-blue-500 hover:underline mr-2">Edit</a>
-                                    <a href="?delete=<?php echo $member['id']; ?>" class="text-red-500 hover:underline" onclick="return confirm('Are you sure you want to delete this member?');">Delete</a>
-                                </div>
-                            </div>
-                        <?php endif; ?>
+    <!-- Add New Member Form -->
+    <form action="" method="POST" class="bg-white p-6 rounded shadow mb-8">
+        <h2 class="text-xl font-bold mb-4">Tambah Anggota Baru</h2>
+        <input type="hidden" name="action" value="add">
+        <div class="grid grid-cols-2 gap-4">
+            <input type="text" name="nama" placeholder="Nama" required class="p-2 border rounded">
+            <select name="jenis_kelamin" required class="p-2 border rounded">
+                <option value="Laki-laki">Laki-laki</option>
+                <option value="Perempuan">Perempuan</option>
+            </select>
+            <input type="number" name="generasi" placeholder="Generasi" required class="p-2 border rounded">
+            <input type="text" name="domisili" placeholder="Domisili" class="p-2 border rounded">
+            <input type="number" name="id_ayah" placeholder="ID Ayah" class="p-2 border rounded">
+            <input type="number" name="id_ibu" placeholder="ID Ibu" class="p-2 border rounded">
+            <input type="number" name="id_istri_1" placeholder="ID Istri 1" class="p-2 border rounded">
+            <input type="number" name="id_istri_2" placeholder="ID Istri 2" class="p-2 border rounded">
+            <input type="number" name="id_istri_3" placeholder="ID Istri 3" class="p-2 border rounded">
+        </div>
+        <button type="submit" class="mt-4 bg-blue-500 text-white p-2 rounded">Tambah Anggota</button>
+    </form>
+
+    <!-- List of Members -->
+    <div class="bg-white p-6 rounded shadow">
+        <h2 class="text-xl font-bold mb-4">Daftar Anggota</h2>
+        <?php foreach ($members as $generation => $generationMembers): ?>
+            <h3 class="text-lg font-semibold mt-6 mb-2">Generasi <?php echo $generation; ?></h3>
+            <table class="w-full mb-4">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Jenis Kelamin</th>
+                        <th>Domisili</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($generationMembers as $member): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($member['id']); ?></td>
+                            <td><?php echo htmlspecialchars($member['nama']); ?></td>
+                            <td><?php echo htmlspecialchars($member['jenis_kelamin']); ?></td>
+                            <td><?php echo htmlspecialchars($member['domisili']); ?></td>
+                            <td>
+                                <button onclick="editMember(<?php echo $member['id']; ?>)" class="bg-yellow-500 text-white p-1 rounded">Edit</button>
+                                <form action="" method="POST" class="inline-block">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?php echo $member['id']; ?>">
+                                    <button type="submit" class="bg-red-500 text-white p-1 rounded" onclick="return confirm('Anda yakin ingin menghapus anggota ini?')">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endforeach; ?>
+    </div>
+
+    <!-- Edit Member Modal (hidden by default) -->
+    <div id="editModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" style="display: none;">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <h3 class="text-lg font-bold mb-4">Edit Anggota</h3>
+            <form id="editForm" action="" method="POST">
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" name="id" id="edit_id">
+                <div class="mb-4">
+                    <input type="text" name="nama" id="edit_nama" placeholder="Nama" required class="w-full p-2 border rounded">
                 </div>
-            <?php endforeach; ?>
+                <div class="mb-4">
+                    <select name="jenis_kelamin" id="edit_jenis_kelamin" required class="w-full p-2 border rounded">
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <input type="number" name="generasi" id="edit_generasi" placeholder="Generasi" required class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-4">
+                    <input type="text" name="domisili" id="edit_domisili" placeholder="Domisili" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-4">
+                    <input type="number" name="id_ayah" id="edit_id_ayah" placeholder="ID Ayah" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-4">
+                    <input type="number" name="id_ibu" id="edit_id_ibu" placeholder="ID Ibu" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-4">
+                    <input type="number" name="id_istri_1" id="edit_id_istri_1" placeholder="ID Istri 1" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-4">
+                    <input type="number" name="id_istri_2" id="edit_id_istri_2" placeholder="ID Istri 2" class="w-full p-2 border rounded">
+                </div>
+                <div class="mb-4">
+                    <input type="number" name="id_istri_3" id="edit_id_istri_3" placeholder="ID Istri 3" class="w-full p-2 border rounded">
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeEditModal()" class="bg-gray-500 text-white p-2 rounded mr-2">Batal</button>
+                    <button type="submit" class="bg-blue-500 text-white p-2 rounded">Simpan Perubahan</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Add/Edit Member Form -->
-    <form action="" method="POST" class="mb-8 bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-semibold mb-4"><?php echo $editMember ? 'Edit Member' : 'Add New Member'; ?></h2>
-        <?php if ($editMember): ?>
-            <input type="hidden" name="id" value="<?php echo $editMember['id']; ?>">
-        <?php endif; ?>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="nama" class="block mb-1">Name</label>
-                <input type="text" id="nama" name="nama" required class="w-full p-2 border rounded" value="<?php echo $editMember ? htmlspecialchars($editMember['nama']) : ''; ?>">
-            </div>
-            <div>
-                <label for="jenis_kelamin" class="block mb-1">Gender</label>
-                <select id="jenis_kelamin" name="jenis_kelamin" required class="w-full p-2 border rounded">
-                    <option value="Laki-laki" <?php echo $editMember && $editMember['jenis_kelamin'] == 'Laki-laki' ? 'selected' : ''; ?>>Laki-laki</option>
-                    <option value="Perempuan" <?php echo $editMember && $editMember['jenis_kelamin'] == 'Perempuan' ? 'selected' : ''; ?>>Perempuan</option>
-                </select>
-            </div>
-            <div>
-                <label for="domisili" class="block mb-1">Domicile</label>
-                <input type="text" id="domisili" name="domisili" class="w-full p-2 border rounded" value="<?php echo $editMember ? htmlspecialchars($editMember['domisili']) : ''; ?>">
-            </div>
-            <div>
-                <label for="generasi" class="block mb-1">Generation</label>
-                <input type="number" id="generasi" name="generasi" required class="w-full p-2 border rounded" min="1" max="<?php echo $highestGeneration; ?>" value="<?php echo $editMember ? $editMember['generasi'] : ''; ?>">
-            </div>
-            <div>
-                <label for="foto_url" class="block mb-1">Photo URL</label>
-                <input type="text" id="foto_url" name="foto_url" class="w-full p-2 border rounded" value="<?php echo $editMember ? htmlspecialchars($editMember['foto_url']) : ''; ?>">
-            </div>
-            <!-- Add more fields for id_istri_1, id_istri_2, id_orang_tua_1, id_orang_tua_2 -->
-        </div>
-        <button type="submit" name="save_member" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">Save Member</button>
-    </form>
-
     <script>
-        // You can add JavaScript here for dynamic form handling if needed
+        function editMember(id) {
+            // Fetch member data and populate the form
+            fetch(`get_member.php?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit_id').value = data.id;
+                    document.getElementById('edit_nama').value = data.nama;
+                    document.getElementById('edit_jenis_kelamin').value = data.jenis_kelamin;
+                    document.getElementById('edit_generasi').value = data.generasi;
+                    document.getElementById('edit_domisili').value = data.domisili;
+                    document.getElementById('edit_id_ayah').value = data.id_ayah;
+                    document.getElementById('edit_id_ibu').value = data.id_ibu;
+                    document.getElementById('edit_id_istri_1').value = data.id_istri_1;
+                    document.getElementById('edit_id_istri_2').value = data.id_istri_2;
+                    document.getElementById('edit_id_istri_3').value = data.id_istri_3;
+                    document.getElementById('editModal').style.display = 'block';
+                });
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
     </script>
 </body>
 </html>
