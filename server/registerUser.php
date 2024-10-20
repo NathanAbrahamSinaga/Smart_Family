@@ -20,20 +20,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Validasi apakah semua field telah diisi
     if (empty($nama_lengkap) || empty($username) || empty($password) || empty($confirm_password) || empty($kode)) {
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=lengkapi");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=lengkapi");
         exit();
     }
 
     // Cek apakah password dan konfirmasi password sama
     if ($password !== $confirm_password) {
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=password");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=password");
         exit();
     }
 
     // Validasi kode
     $stmt = $conn->prepare("SELECT kode FROM kode WHERE kode = ?");
     if (!$stmt) {
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=stmt_prepare");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=stmt_prepare");
         exit();
     }
     $stmt->bind_param("s", $kode);
@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt->num_rows == 0) {
         // Kode tidak valid
         $stmt->close();
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=kode");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=kode");
         exit();
     }
 
@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Cek apakah username sudah ada
     $stmt = $conn->prepare("SELECT id FROM users_forum WHERE username = ?");
     if (!$stmt) {
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=stmt_prepare");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=stmt_prepare");
         exit();
     }
     $stmt->bind_param("s", $username);
@@ -62,7 +62,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($stmt->num_rows > 0) {
         // Username sudah digunakan
         $stmt->close();
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=username");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=username");
         exit();
     }
 
@@ -74,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Insert pengguna baru
     $stmt = $conn->prepare("INSERT INTO users_forum (nama_lengkap, username, password) VALUES (?, ?, ?)");
     if (!$stmt) {
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=stmt_insert");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=stmt_insert");
         exit();
     }
     $stmt->bind_param("sss", $nama_lengkap, $username, $hashed_password);
@@ -89,12 +89,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Gagal menyimpan data
         $stmt->close();
         $conn->close();
-        header("Location: " . BASE_URL . "src/loginPage/registerForum.php?register_gagal=database");
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=database");
         exit();
     }
 } else {
     // Jika bukan metode POST, redirect ke halaman register
-    header("Location: " . BASE_URL . "src/loginPage/registerForum.php");
+    header("Location: " . BASE_URL . "src/loginPage/register.php");
     exit();
 }
 ?>

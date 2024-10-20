@@ -5,6 +5,5 @@ define('DB_PASS', '');
 define('DB_NAME', 'smart_family');
 
 
-// Definisikan BASE_URL sesuai dengan direktori proyek Anda
-define('BASE_URL', 'http://localhost/smart_family/');
+define('BASE_URL', 'http://nathan.owyhouse.xyz/' ?: 'http://localhost/smart_family/');
 ?>

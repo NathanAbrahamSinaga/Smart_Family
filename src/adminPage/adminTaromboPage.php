@@ -64,12 +64,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->close();
                 break;
             case 'delete':
-                // Delete member
-                $stmt = $conn->prepare("DELETE FROM anggota WHERE id=?");
+                // Fetch the photo path from the database
+                $stmt = $conn->prepare("SELECT foto FROM anggota WHERE id=?");
                 $id = $_POST['id'];
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $stmt->bind_result($foto);
+                $stmt->fetch();
+                $stmt->close();
+
+                // Delete the member from the database
+                $stmt = $conn->prepare("DELETE FROM anggota WHERE id=?");
                 $stmt->bind_param("i", $id);
 
                 if ($stmt->execute()) {
+                    // If the member is deleted successfully, delete the photo file
+                    if (!empty($foto) && file_exists('../../' . $foto)) {
+                        unlink('../../' . $foto); // Delete the photo file
+                    }
                     $message = "Anggota berhasil dihapus.";
                 } else {
                     $message = "Error: " . $stmt->error;
@@ -132,7 +144,6 @@ ksort($members);
             <div class="col-span-2">
                 <label for="imageUpload" class="block text-sm font-medium text-gray-700">Foto Profil</label>
                 <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                <img id="previewImage" src="" alt="Preview" class="mt-4 max-w-xs rounded-lg shadow-md" style="display:none;">
             </div>
             
             <div>
@@ -185,7 +196,7 @@ ksort($members);
         </div>
         
         <div class="flex justify-end mt-6">
-            <button type="submit" id="submitBtn" class="bg-blue-500 text-white px-6 py-2 rounded-md shadow-md hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">Tambah Anggota</button>
+            <button type="submit" id="submitBtn" class="w-32 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Tambah</button>
         </div>
     </form>
 
@@ -210,13 +221,15 @@ ksort($members);
                         <td><?php echo $member['nama']; ?></td>
                         <td><?php echo $member['jenis_kelamin']; ?></td>
                         <td><?php echo $member['domisili']; ?></td>
-                        <td><img src="<?php echo $member['foto']; ?>" alt="Foto" width="50"></td>
                         <td>
-                            <button onclick="editMember(<?php echo htmlspecialchars(json_encode($member)); ?>)" class="bg-green-500 text-white p-1 rounded mr-2">Edit</button>
+                            <img src="<?php echo !empty($member['foto']) ? '../../' . $member['foto'] : ($member['jenis_kelamin'] == 'Laki-laki' ? '../../assets/img/default_male.jpg' : '../../assets/img/default_female.jpg'); ?>" alt="Foto" width="50">
+                        </td>
+                        <td style="text-align: center; vertical-align: middle;">
+                            <button onclick="editMember(<?php echo htmlspecialchars(json_encode($member)); ?>)" class="w-22 mb-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-2 rounded">Edit</button>
                             <form action="" method="POST" class="inline-block">
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?php echo $member['id']; ?>">
-                                <button type="submit" class="bg-red-500 text-white p-1 rounded" onclick="return confirm('Anda yakin ingin menghapus anggota ini?')">Hapus</button>
+                                <button type="submit" class="w-22 bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-2 rounded" onclick="return confirm('Anda yakin ingin menghapus anggota ini?')">Hapus</button>
                             </form>
                         </td>
                     </tr>
@@ -239,47 +252,29 @@ ksort($members);
             document.getElementById('idIstri1Input').value = member.id_istri_1;
             document.getElementById('idIstri2Input').value = member.id_istri_2;
             document.getElementById('idIstri3Input').value = member.id_istri_3;
-            document.getElementById('fotoInput').value = member.foto;
-            document.getElementById('previewImage').src = member.foto;
-            document.getElementById('previewImage').style.display = 'block';
+            document.getElementById('fotoInput').value = member.foto;            
             document.getElementById('submitBtn').innerText = 'Update Anggota';
-            
-            // Scroll to the form
             document.getElementById('memberForm').scrollIntoView({behavior: 'smooth'});
         }
 
-        // Image preview and upload functionality
-        // Di adminTaromboPage.php, ubah event listener untuk image upload
         document.getElementById('imageUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
                 const formData = new FormData();
                 formData.append('image', file);
+                formData.append('member_id', document.getElementById('memberId').value || '0');
+                formData.append('generation', document.getElementById('generasiInput').value || '1');
 
-                // Ubah path sesuai dengan struktur folder
-                fetch('../../uploads/imgur_upload.php', {  // Perhatikan path relatif ini
+                fetch('../../uploads/upload_handler.php', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.text();
-                })
-                .then(text => {
-                    try {
-                        const data = JSON.parse(text);
-                        if (data.success) {
-                            document.getElementById('previewImage').src = data.link;
-                            document.getElementById('previewImage').style.display = 'block';
-                            document.getElementById('fotoInput').value = data.link;
-                        } else {
-                            throw new Error(data.error || 'Upload failed');
-                        }
-                    } catch (e) {
-                        console.error('Raw response:', text);
-                        throw new Error('Invalid JSON response: ' + text);
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('fotoInput').value = data.link;
+                    } else {
+                        throw new Error(data.error || 'Upload failed');
                     }
                 })
                 .catch(error => {

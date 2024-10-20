@@ -127,6 +127,7 @@ $usersResult = $conn->query($usersQuery);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Page - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100">

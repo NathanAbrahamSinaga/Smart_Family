@@ -37,6 +37,24 @@ function truncateText($text, $limit = 50) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forum - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
+    <style>
+        .forum-box {
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        .forum-box:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .forum-box {
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        .forum-box:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .forum-title {
+            word-break: break-word;
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
     <!-- Header -->
@@ -56,8 +74,12 @@ function truncateText($text, $limit = 50) {
         <div class="flex justify-between mb-6">
             <h2 class="text-2xl font-semibold">Semua Forum</h2>
             <div class="space-x-4">
-                <a href="tambahForumPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">Create Forum</a>
-                <a href="daftarForumPage.php" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded">Daftar Forum Saya</a>
+                <a href="tambahForumPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-2 rounded sm:py-1 sm:px-2 md:py-2 md:px-4">
+                    Create Forum
+                </a>
+                <a href="daftarForumPage.php" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded sm:py-1 sm:px-2 md:py-2 md:px-4">
+                    Daftar Forum Saya
+                </a>
             </div>
         </div>
 
@@ -65,9 +87,9 @@ function truncateText($text, $limit = 50) {
         <?php if ($result->num_rows > 0): ?>
             <div class="space-y-6">
                 <?php while($row = $result->fetch_assoc()): ?>
-                    <div class="bg-white p-6 rounded shadow">
+                    <div class="bg-white p-6 rounded shadow forum-box">
                         <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-bold">
+                            <h3 class="text-xl font-bold forum-title"> <!-- Changed class name to forum-title -->
                                 <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:underline">
                                     <?php echo htmlspecialchars($row['judul']); ?>
                                 </a>
@@ -82,6 +104,7 @@ function truncateText($text, $limit = 50) {
         <?php else: ?>
             <p class="text-gray-700">Belum ada forum. <a href="tambahForumPage.php" class="text-blue-500 hover:underline">Buat forum pertama Anda</a>.</p>
         <?php endif; ?>
+        </div>
     </div>
 
     <!-- Footer Static (Ditampilkan saat ada scroll) -->
@@ -117,6 +140,35 @@ function truncateText($text, $limit = 50) {
 
         // Jalankan fungsi saat jendela di-resize
         window.addEventListener('resize', toggleFooter);
+
+        function adjustMaxChar() {
+            const forumTitles = document.querySelectorAll('.forum-title');
+
+            let maxCharTitle;
+
+            if (window.innerWidth < 640) {
+                maxCharTitle = 15;
+            } else if (window.innerWidth < 1024) {
+                maxCharTitle = 40;
+            } else {
+                maxCharTitle = 60;
+            }
+
+            // Wrap titles
+            forumTitles.forEach(title => {
+                const link = title.querySelector('a');
+                if (link) {
+                    link.textContent = wrapLongWords(link.textContent, maxCharTitle);
+                }
+            });
+        }
+
+        function wrapLongWords(text, max_char) {
+            return text.replace(new RegExp(`\\S{${max_char}}(?!\\s)`, 'g'), '$&\n');
+        }
+
+        window.addEventListener('resize', adjustMaxChar);
+        window.addEventListener('load', adjustMaxChar);
     </script>
 </body>
 </html>

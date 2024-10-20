@@ -39,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Set variabel sesi
             $_SESSION["user_id"] = $row['id'];
             $_SESSION["username"] = $row['username'];
-            // Redirect ke halaman forum
+            // Redirect ke halaman taromboPage
             $stmt->close();
             $conn->close();
             header("Location: " . BASE_URL . "src/taromboPage/tarombo.php");

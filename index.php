@@ -20,15 +20,18 @@
             <h2 class="text-3xl font-semibold mb-8">Smart Family</h2>
 
         <!-- Tombol-Tombol -->
-        <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4 mb-8 overflow-y-auto md:h-screen/2">
-            <a href="src/loginPage/loginAdmin.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+        <div class="flex flex-row justify-center space-x-4 mb-8">
+            <a href="src/loginPage/loginAdmin.php" class="w-32 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 Login Admin
             </a>
-            <a href="src/loginPage/loginForumPage.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+            <a href="src/loginPage/loginForum.php" class="w-32 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 Forum
             </a>
-            <a href="src/loginPage/loginTarombo.php" class="w-40 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+            <a href="src/loginPage/loginTarombo.php" class="w-32 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
                 Tarombo
+            </a>
+            <a href="src/loginPage/register.php" class="w-32 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">
+                Register
             </a>
         </div>
 
