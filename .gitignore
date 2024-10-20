@@ -2,3 +2,4 @@ Penyelamat
 node_modules
 assets/bootstrap
 /package_lock.json
+.env
