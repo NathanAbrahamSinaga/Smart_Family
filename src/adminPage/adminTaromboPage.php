@@ -238,6 +238,10 @@ ksort($members);
         </table>
     <?php endforeach; ?>
 
+    <div class="flex items-center space-x-4">
+        <a href="adminPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+    </div>
+
     <script>
         function editMember(member) {
             document.getElementById('formTitle').innerText = 'Edit Anggota';

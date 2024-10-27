@@ -135,7 +135,10 @@ $usersResult = $conn->query($usersQuery);
     <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold ml-5">Smart Family Admin Panel</h1>
+            <div class="flex items-center space-x-4">
+                <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+                <h1 class="text-xl font-semibold ml-5">Smart Family Admin Page</h1>
+            </div>
             <div>
                 <span class="mr-4">Welcome, Admin <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
                 <a href="adminTaromboPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded mr-4">Manage Tarombo</a>
