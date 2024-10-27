@@ -20,24 +20,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows == 1) {
         $row = $result->fetch_assoc();
         if (password_verify($password, $row['password'])) {
-            $_SESSION["user_id"] = $row['id'];
-            $_SESSION["username"] = $row['username'];
+            // Clear any existing session data
+            session_unset();
+            session_destroy();
+            session_start();
+            
+            // Set admin session
+            $_SESSION["admin_id"] = $row['id'];
+            $_SESSION["username"] = $row['username']; // Sesuaikan dengan yang digunakan di adminPage.php
+            $_SESSION["user_type"] = "admin";
+            
             header("Location: " . BASE_URL . "src/adminPage/adminPage.php");
             exit();
-        } else {
-            header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php?login_gagal=password");
-            exit();
         }
-    } else {
-        header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php?login_gagal=username");
-        exit();
     }
+    
+    // If login fails
+    $_SESSION['login_error'] = "Username atau password salah";
+    header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
+    exit();
 
     $stmt->close();
     $conn->close();
-} else {
-    // Menggunakan BASE_URL
-    header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
-    exit();
 }
+
+// If not POST request
+header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
+exit();
 ?>

@@ -2,11 +2,12 @@
 session_start();
 require_once '../../server/config.php';
 
-// Check if the user is logged in as an admin
-if (!isset($_SESSION["user_id"]) || !isset($_SESSION["username"])) {
+// Pengecekan session yang lebih spesifik
+if (!isset($_SESSION["admin_id"]) || $_SESSION["user_type"] !== "admin") {
     header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
     exit();
 }
+
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($conn->connect_error) {

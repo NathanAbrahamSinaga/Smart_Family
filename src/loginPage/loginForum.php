@@ -61,7 +61,7 @@ if (isset($_SESSION["user_id"])) {
 
         <!-- Link Kembali ke Halaman Forum -->
         <div class="mt-6 text-center">
-            <a href="loginForumPage.php" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Kembali</a>
+            <a href="../../index.php" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Kembali</a>
         </div>
     </div>
 </body>

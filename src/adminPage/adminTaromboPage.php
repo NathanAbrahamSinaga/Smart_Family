@@ -263,7 +263,6 @@ ksort($members);
                 const formData = new FormData();
                 formData.append('image', file);
                 formData.append('member_id', document.getElementById('memberId').value || '0');
-                formData.append('generation', document.getElementById('generasiInput').value || '1');
 
                 fetch('../../uploads/upload_handler.php', {
                     method: 'POST',

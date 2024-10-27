@@ -1,10 +1,14 @@
 <?php
 session_start();
-if (isset($_SESSION["user_id"])) {
-    header("location: ../adminPage/adminPage.php");
+require_once '../../server/config.php';
+
+// Jika sudah login sebagai admin, redirect ke admin page
+if (isset($_SESSION["admin_id"]) && $_SESSION["user_type"] === "admin") {
+    header("Location: " . BASE_URL . "src/adminPage/adminPage.php");
     exit();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
