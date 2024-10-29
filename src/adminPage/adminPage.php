@@ -139,7 +139,23 @@ $usersResult = $conn->query($usersQuery);
                 <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
                 <h1 class="text-xl font-semibold ml-5">Smart Family Admin Page</h1>
             </div>
-            <div>
+            
+            <!-- Mobile Dropdown Menu -->
+            <div x-data="{ open: false }" class="relative lg:hidden mr-5">
+                <button @click="open = !open" class="text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <!-- Hamburger icon (3 vertical lines) -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10">
+                    <a href="adminTaromboPage.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Manage Tarombo</a>
+                    <a href="../loginPage/logout.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Logout</a>
+                </div>
+            </div>
+
+            <!-- Desktop Links -->
+            <div class="hidden lg:flex items-center">
                 <span class="mr-4">Welcome, Admin <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
                 <a href="adminTaromboPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded mr-4">Manage Tarombo</a>
                 <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>

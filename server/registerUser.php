@@ -24,6 +24,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         exit();
     }
 
+    // Validasi reCAPTCHA
+    $recaptcha_secret = "6LdHpG0qAAAAAOBLj-g0d9_3HFL8Mwr9xr5iGvel";
+    $recaptcha_response = $_POST['g-recaptcha-response'];
+
+    $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
+    $response_data = json_decode($verify_response, true);
+
+    if (!$response_data['success']) {
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=captcha");
+        exit();
+    }
+
     // Cek apakah password dan konfirmasi password sama
     if ($password !== $confirm_password) {
         header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=password");

@@ -3,6 +3,19 @@ session_start();
 require_once '../config.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // // Verifikasi reCAPTCHA
+    // $recaptcha_secret = "";
+    // $recaptcha_response = $_POST['g-recaptcha-response'];
+    
+    // $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$recaptcha_secret.'&response='.$recaptcha_response);
+    // $response_data = json_decode($verify_response);
+    
+    // if (!$response_data->success) {
+    //     $_SESSION['login_error'] = "Mohon verifikasi reCAPTCHA";
+    //     header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php?login_gagal=captcha");
+    //     exit();
+    // }
+
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
     if ($conn->connect_error) {
@@ -27,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             // Set admin session
             $_SESSION["admin_id"] = $row['id'];
-            $_SESSION["username"] = $row['username']; // Sesuaikan dengan yang digunakan di adminPage.php
+            $_SESSION["username"] = $row['username'];
             $_SESSION["user_type"] = "admin";
             
             header("Location: " . BASE_URL . "src/adminPage/adminPage.php");

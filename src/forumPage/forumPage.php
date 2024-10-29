@@ -77,9 +77,6 @@ function truncateText($text, $limit = 50) {
         <div class="flex justify-between mb-6">
             <h2 class="text-2xl font-semibold">Semua Forum</h2>
             <div class="space-x-4">
-                <a href="tambahForumPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-2 rounded sm:py-1 sm:px-2 md:py-2 md:px-4">
-                    Create Forum
-                </a>
                 <a href="daftarForumPage.php" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded sm:py-1 sm:px-2 md:py-2 md:px-4">
                     Daftar Forum Saya
                 </a>

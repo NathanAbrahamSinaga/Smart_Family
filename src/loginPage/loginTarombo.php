@@ -15,6 +15,8 @@ if (isset($_SESSION["user_id"])) {
     <title>Login Tarombo - Smart Family</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/output.css">
+    <!-- Google reCAPTCHA -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <!-- Kotak Form Login -->
@@ -33,6 +35,10 @@ if (isset($_SESSION["user_id"])) {
                 <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
                 <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" required>
             </div>
+            <!-- reCAPTCHA -->
+            <div class="mb-6 flex justify-center">
+                <div class="g-recaptcha" data-sitekey=""></div>
+            </div>
             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Login</button>
         </form>
 
@@ -49,6 +55,8 @@ if (isset($_SESSION["user_id"])) {
                     $message = 'Silakan lengkapi semua field';
                 } elseif($_GET['login_gagal'] == 'stmt_prepare') {
                     $message = 'Terjadi kesalahan pada sistem. Silakan coba lagi.';
+                } elseif($_GET['login_gagal'] == 'captcha') {
+                    $message = 'Mohon verifikasi reCAPTCHA';
                 }
                 echo "<div class=\"$alertClass\" role=\"alert\">$message</div>";
             }
