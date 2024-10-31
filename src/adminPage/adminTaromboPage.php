@@ -133,15 +133,14 @@ ksort($members);
         </div>
     <?php endif; ?>
 
-    <!-- Add New Member Form -->
-    <form id="memberForm" action="" method="POST" class="bg-white p-6 rounded-lg shadow-md mb-8 max-w-4xl mx-auto">
-        <h2 id="formTitle" class="text-2xl font-semibold mb-6">Tambah Anggota Baru</h2>
+    <form id="memberForm" action="" method="POST" class="bg-white p-4 rounded-lg shadow-md mb-6 max-w-lg mx-auto">
+        <h2 id="formTitle" class="text-xl font-semibold mb-4">Tambah Anggota Baru</h2>
         <input type="hidden" name="action" id="formAction" value="add">
         <input type="hidden" name="id" id="memberId">
         <input type="hidden" name="foto" id="fotoInput">
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div class="col-span-2">
+
+        <div class="space-y-6">
+            <div>
                 <label for="imageUpload" class="block text-sm font-medium text-gray-700">Foto Profil</label>
                 <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
             </div>
@@ -195,14 +194,13 @@ ksort($members);
             </div>
         </div>
         
-        <div class="flex justify-end mt-6">
-            <button type="submit" id="submitBtn" class="w-32 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Tambah</button>
+        <div class="mt-6">
+            <button type="submit" id="submitBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Tambah</button>
         </div>
     </form>
 
-    <!-- Display Members -->
     <?php foreach ($members as $generasi => $list): ?>
-        <h2 class="text-xl font-bold mb-4">Generasi <?php echo $generasi; ?></h2>
+        <h2 class="text-xl font-bold mb-4">Sundut <?php echo $generasi; ?></h2>
         <table class="mb-8">
             <thead>
                 <tr>

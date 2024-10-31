@@ -5,5 +5,5 @@ define('DB_PASS', '');
 define('DB_NAME', 'smart_family');
 
 
-define('BASE_URL', 'http://localhost/smart_family/');
+define('BASE_URL', 'https://nathan.owyhouse.xyz/');
 ?>

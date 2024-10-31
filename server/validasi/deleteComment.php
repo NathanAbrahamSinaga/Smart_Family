@@ -17,11 +17,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $user_id = $_SESSION["user_id"];
     $topic_id = null;
 
-    // Begin transaction for data consistency
     $conn->begin_transaction();
 
     try {
-        // Verify the user is the author of the comment
         $stmt = $conn->prepare("SELECT id_penulis, id_topik FROM komentar_forum WHERE id = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare");
@@ -32,18 +30,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_result($id_penulis, $topic_id);
         if ($stmt->fetch()) {
             if ($id_penulis != $user_id) {
-                // Unauthorized
                 $stmt->close();
                 throw new Exception("unauthorized");
             }
         } else {
-            // Comment not found
             $stmt->close();
             throw new Exception("not_found");
         }
         $stmt->close();
 
-        // Delete the comment
         $stmt = $conn->prepare("DELETE FROM komentar_forum WHERE id = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare_delete_comment");
@@ -54,10 +49,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         $stmt->close();
 
-        // Commit the transaction
         $conn->commit();
 
-        // Redirect back to the topic page
         if ($topic_id !== null) {
             header("Location: " . BASE_URL . "src/forumPage/topikForum.php?id=" . $topic_id . "&delete_comment_sukses=1");
         } else {
@@ -65,7 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         exit();
     } catch (Exception $e) {
-        // Rollback the transaction in case of error
         $conn->rollback();
 
         $error = $e->getMessage();

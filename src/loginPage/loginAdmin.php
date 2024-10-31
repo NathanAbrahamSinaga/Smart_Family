@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Jika sudah login sebagai admin, redirect ke admin page
 if (isset($_SESSION["admin_id"]) && $_SESSION["user_type"] === "admin") {
     header("Location: " . BASE_URL . "src/adminPage/adminPage.php");
     exit();
@@ -16,15 +15,11 @@ if (isset($_SESSION["admin_id"]) && $_SESSION["user_type"] === "admin") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Admin - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
-    <!--Google reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <!-- Kotak Form Login -->
+<body class="bg-gray-100 flex items-center justify-center min-h-screen px-4 md:px-0">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <!-- Judul -->
         <h2 class="text-3xl font-semibold mb-6 text-center">Login Admin</h2>
-        <!-- Form Login -->
         <form action="../../server/validasi/validasiAdmin.php" method="POST">
             <div class="mb-4">
                 <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
@@ -34,10 +29,9 @@ if (isset($_SESSION["admin_id"]) && $_SESSION["user_type"] === "admin") {
                 <label for="password" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
                 <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" required>
             </div>
-            <!-- reCAPTCHA
             <div class="mb-6 flex justify-center">
                 <div class="g-recaptcha" data-sitekey=""></div>
-            </div> -->
+            </div>
             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Login</button>
         </form>
         <?php
@@ -51,7 +45,6 @@ if (isset($_SESSION["admin_id"]) && $_SESSION["user_type"] === "admin") {
             }
         }
         ?>
-        <!-- Link Kembali ke Halaman Utama -->
         <div class="mt-6 text-center">
             <a href="../../index.php" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">Kembali</a>
         </div>

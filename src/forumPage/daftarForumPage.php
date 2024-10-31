@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Cek apakah pengguna sudah login
 if (!isset($_SESSION["user_id"])) {
     header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=not_logged_in");
     exit();
@@ -14,7 +13,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Ambil forum pengguna
 $stmt = $conn->prepare("SELECT id, judul, tanggal_dibuat FROM topik_forum WHERE id_pembuat = ? ORDER BY tanggal_dibuat DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -31,25 +29,22 @@ $stmt->close();
         <link rel="stylesheet" href="../../assets/css/output.css">
     </head>
     <body class="bg-gray-100 flex flex-col min-h-screen">
-        <!-- Header -->
         <header class="bg-blue-500 text-white py-4">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-4">
                     <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
-                    <h1 class="text-xl font-semibold ml-5">Daftar Forum Saya</h1>
+                    <h1 class="text-xl font-semibold ml-5">Forum</h1>
                 </div>
                 <div>
-                    <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
+                    <span class="mr-4"><?php echo htmlspecialchars($_SESSION["username"]); ?></span>
                     <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
                 </div>
             </div>
         </header>
 
-        <!-- Container Utama -->
         <div class="container mx-auto mt-8 px-4 flex-grow">
             <h2 class="text-2xl font-semibold mb-6">Daftar Forum Saya</h2>
 
-            <!-- Tombol Tambah Forum -->
             <div class="flex justify-end mb-4">
                 <a href="tambahForumPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">Tambah Forum</a>
             </div>
@@ -73,7 +68,6 @@ $stmt->close();
                 <p class="text-gray-700">Anda belum membuat forum apapun. <a href="tambahForumPage.php" class="text-blue-500 hover:underline">Buat forum sekarang</a>.</p>
             <?php endif; ?>
 
-            <!-- Pesan Feedback -->
             <?php
                 if(isset($_GET['delete_gagal'])) {
                     $message = '';
@@ -96,19 +90,16 @@ $stmt->close();
             ?>
         </div>
 
-        <!-- Footer Static (Ditampilkan saat ada scroll) -->
         <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-20">
             <div class="container mx-auto text-center">
                 <p>&copy; 2024 Smart Family. All rights reserved.</p>
             </div>
         </footer>
 
-        <!-- Footer Fixed (Ditampilkan saat tidak ada scroll) -->
         <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center">
             <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
         </footer>
 
-        <!-- JavaScript untuk Menentukan Footer yang Ditampilkan -->
         <script>
             function toggleFooter() {
                 const footerStatic = document.getElementById('footer-static');
@@ -124,10 +115,8 @@ $stmt->close();
                 }
             }
 
-            // Jalankan fungsi saat halaman dimuat
             window.addEventListener('load', toggleFooter);
 
-            // Jalankan fungsi saat jendela di-resize
             window.addEventListener('resize', toggleFooter);
         </script>
     </body>

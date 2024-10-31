@@ -3,17 +3,17 @@ session_start();
 require_once '../config.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // $recaptcha_secret = "-";
-    // $recaptcha_response = $_POST['g-recaptcha-response'];
+    $recaptcha_secret = "";
+    $recaptcha_response = $_POST['g-recaptcha-response'];
 
-    // $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
-    // $response_data = json_decode($verify_response, true);
+    $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
+    $response_data = json_decode($verify_response, true);
 
-    // if (!$response_data['success']) {
-    //     $_SESSION['login_error'] = "Mohon verifikasi reCAPTCHA";
-    //     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php?login_gagal=captcha");
-    //     exit();
-    // }
+    if (!$response_data['success']) {
+        $_SESSION['login_error'] = "Mohon verifikasi reCAPTCHA";
+        header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php?login_gagal=captcha");
+        exit();
+    }
 
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
@@ -37,10 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($result->num_rows == 1) {
         $row = $result->fetch_assoc();
         if (password_verify($password, $row['password'])) {
-            // Clear any existing session data
             session_unset();
 
-            // Set tarombo user session
             $_SESSION["user_id"] = $row['id'];
             $_SESSION["username"] = $row['username'];
             $_SESSION["user_type"] = "tarombo";
@@ -50,7 +48,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // If login fails
     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php?error=invalid");
     exit();
 
@@ -58,7 +55,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $conn->close();
 }
 
-// If not POST request
 header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
 exit();
 ?>

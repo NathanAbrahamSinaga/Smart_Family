@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Cek apakah pengguna sudah login
 if (!isset($_SESSION["user_id"])) {
     header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=not_logged_in");
     exit();
@@ -13,14 +12,12 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Ambil semua forum
 $sql = "SELECT tf.id, tf.judul, tf.isi, tf.tanggal_dibuat, uf.username 
         FROM topik_forum tf 
         JOIN users_forum uf ON tf.id_pembuat = uf.id 
         ORDER BY tf.tanggal_dibuat DESC";
 $result = $conn->query($sql);
 
-// Fungsi untuk membatasi kata dalam isi
 function truncateText($text, $limit = 50) {
     $words = explode(' ', $text);
     if (count($words) > $limit) {
@@ -57,39 +54,35 @@ function truncateText($text, $limit = 50) {
     </style>
 </head>
 <body class="bg-gray-100">
-    <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
-                <h1 class="text-xl font-semibold ml-5">Smart Family Forum</h1>
+                <h1 class="text-xl font-semibold ml-5">Forum</h1>
             </div>
             <div>
-                <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
+                <span class="mr-4"><?php echo htmlspecialchars($_SESSION["username"]); ?></span>
                 <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
         </div>
     </header>
 
-    <!-- Container Utama -->
     <div class="container mx-auto mt-8 px-4">
-        <!-- Tombol Tambah Forum dan Daftar Forum Saya -->
         <div class="flex justify-between mb-6">
             <h2 class="text-2xl font-semibold">Semua Forum</h2>
             <div class="space-x-4">
                 <a href="daftarForumPage.php" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded sm:py-1 sm:px-2 md:py-2 md:px-4">
-                    Daftar Forum Saya
+                    Daftar Forum
                 </a>
             </div>
         </div>
 
-        <!-- Daftar Forum -->
         <?php if ($result->num_rows > 0): ?>
             <div class="space-y-6">
                 <?php while($row = $result->fetch_assoc()): ?>
                     <div class="bg-white p-6 rounded shadow forum-box">
                         <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-bold forum-title"> <!-- Changed class name to forum-title -->
+                            <h3 class="text-xl font-bold forum-title">
                                 <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:underline">
                                     <?php echo htmlspecialchars($row['judul']); ?>
                                 </a>
@@ -107,19 +100,16 @@ function truncateText($text, $limit = 50) {
         </div>
     </div>
 
-    <!-- Footer Static (Ditampilkan saat ada scroll) -->
     <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-20">
         <div class="container mx-auto text-center">
             <p>&copy; 2024 Smart Family. All rights reserved.</p>
         </div>
     </footer>
 
-    <!-- Footer Fixed (Ditampilkan saat tidak ada scroll) -->
     <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center">
         <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
 
-    <!-- JavaScript untuk Menentukan Footer yang Ditampilkan -->
     <script>
         function toggleFooter() {
             const footerStatic = document.getElementById('footer-static');
@@ -135,10 +125,8 @@ function truncateText($text, $limit = 50) {
             }
         }
 
-        // Jalankan fungsi saat halaman dimuat
         window.addEventListener('load', toggleFooter);
 
-        // Jalankan fungsi saat jendela di-resize
         window.addEventListener('resize', toggleFooter);
 
         function adjustMaxChar() {
@@ -154,7 +142,6 @@ function truncateText($text, $limit = 50) {
                 maxCharTitle = 60;
             }
 
-            // Wrap titles
             forumTitles.forEach(title => {
                 const link = title.querySelector('a');
                 if (link) {

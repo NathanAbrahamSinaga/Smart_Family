@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Cek apakah pengguna sudah login
 if (!isset($_SESSION["user_id"])) {
     header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=not_logged_in");
     exit();
@@ -17,21 +16,19 @@ if (!isset($_SESSION["user_id"])) {
     <link rel="stylesheet" href="../../assets/css/output.css">
 </head>
 <body class="bg-gray-100">
-    <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
-                <h1 class="text-xl font-semibold ml-5">Tambah Forum</h1>
+                <h1 class="text-xl font-semibold ml-5">Forum</h1>
             </div>
             <div>
-                <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
+                <span class="mr-4"><?php echo htmlspecialchars($_SESSION["username"]); ?></span>
                 <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
         </div>
     </header>
 
-    <!-- Container Utama -->
     <div class="container mx-auto mt-8 px-4">
         <h2 class="text-2xl font-semibold mb-6">Tambah Forum Baru</h2>
 
@@ -70,7 +67,6 @@ if (!isset($_SESSION["user_id"])) {
         ?>
     </div>
 
-    <!-- Footer -->
     <footer class="bg-blue-500 text-white py-4 mt-20 flex justify-center items-center fixed bottom-0 left-0 right-0">
         <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>

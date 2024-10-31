@@ -10,16 +10,12 @@ require_once '../../server/config.php';
     <title>Register Forum - Smart Family</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/output.css">
-    <!--  Google reCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <!-- Kotak Form Register -->
+<body class="bg-gray-100 flex items-center justify-center min-h-screen px-4 md:px-0">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <!-- Judul -->
         <h2 class="text-3xl font-semibold mb-6 text-center">Register Forum</h2>
 
-        <!-- Form Register -->
         <form action="<?php echo BASE_URL; ?>server/registerUser.php" method="POST">
             <div class="mb-4">
                 <label for="nama_lengkap" class="block text-gray-700 text-sm font-bold mb-2">Nama Lengkap</label>
@@ -41,9 +37,9 @@ require_once '../../server/config.php';
                 <label for="kode" class="block text-gray-700 text-sm font-bold mb-2">Kode Registrasi</label>
                 <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="kode" name="kode" required>
             </div>
-            <!-- <div class="mb-6 flex justify-center">
+            <div class="mb-6 flex justify-center">
                 <div class="g-recaptcha" data-sitekey=""></div>
-            </div> -->
+            </div>
             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Register</button>
         </form>
 
@@ -53,6 +49,8 @@ require_once '../../server/config.php';
                 $alertClass = 'bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4';
                 if($_GET['register_gagal'] == 'password') {
                     $message = 'Password tidak sama';
+                } elseif($_GET['register_gagal'] == 'password_format') {
+                    $message = 'Password harus terdiri dari minimal 8 karakter, termasuk 1 huruf kapital dan 1 simbol';
                 } elseif($_GET['register_gagal'] == 'username') {
                     $message = 'Username sudah digunakan';
                 } elseif($_GET['register_gagal'] == 'database') {
@@ -66,9 +64,8 @@ require_once '../../server/config.php';
             }
         ?>
 
-        <!-- Link Kembali ke Halaman Forum -->
         <div class="mt-6 text-center">
-            <a href="loginForumPage.php" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Kembali</a>
+            <a href="../../index.php" class="w-full bg-gray-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Kembali</a>
         </div>
     </div>
 </body>

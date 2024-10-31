@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Cek apakah pengguna sudah login
 if (!isset($_SESSION["user_id"])) {
     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
     exit();
@@ -40,12 +39,19 @@ if ($generation) {
 $whereClauseSql = !empty($whereClause) ? "WHERE " . implode(" AND ", $whereClause) : "";
 
 $query = "
-    SELECT a.*, 
-           ayah.nama as nama_ayah, 
-           ibu.nama as nama_ibu, 
+    SELECT a.*,
+           ayah.nama as nama_ayah,
+           ibu.nama as nama_ibu,
+           -- Info istri untuk anggota laki-laki
            istri1.nama as nama_istri_1,
            istri2.nama as nama_istri_2,
            istri3.nama as nama_istri_3,
+           -- Info suami untuk anggota perempuan
+           (SELECT GROUP_CONCAT(DISTINCT suami.nama ORDER BY suami.nama ASC SEPARATOR ', ')
+            FROM anggota suami 
+            WHERE suami.id_istri_1 = a.id 
+               OR suami.id_istri_2 = a.id 
+               OR suami.id_istri_3 = a.id) as nama_suami,
            GROUP_CONCAT(DISTINCT anak.nama ORDER BY anak.nama ASC SEPARATOR ', ') as nama_anak
     FROM anggota a
     LEFT JOIN anggota ayah ON a.id_ayah = ayah.id
@@ -61,7 +67,6 @@ $query = "
 
 $result = $conn->query($query);
 
-// Fetch all generations for the dropdown
 $generationQuery = "SELECT DISTINCT generasi FROM anggota ORDER BY generasi";
 $generationResult = $conn->query($generationQuery);
 $generations = [];
@@ -81,32 +86,30 @@ while ($row = $generationResult->fetch_assoc()) {
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
-    <!-- Header (kept as is) -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold ml-5">Smart Family - Kumpulan Profile</h1>
+            <h1 class="text-xl font-semibold ml-5">Tarombo</h1>
             <div>
-                <span class="mr-4">Welcome, <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
+                <span class="mr-4"><?php echo htmlspecialchars($_SESSION["username"]); ?></span>
                 <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-grow container mx-auto px-4 py-8">
         <div class="mb-8 flex flex-col md:flex-row justify-between items-center">
             <div>
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">Kumpulan Profile Keluarga</h2>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Profile</h2>
                 <p class="text-gray-600">Jelajahi dan temukan anggota keluarga dalam silsilah Smart Family.</p>
             </div>
             <div class="mt-4 md:mt-0 w-full md:w-auto">
                 <form action="" method="GET" class="flex flex-col md:flex-row items-center gap-2">
                     <input type="text" name="search" placeholder="Cari anggota keluarga..." value="<?php echo htmlspecialchars($search); ?>" class="w-full md:w-64 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <select name="generation" class="w-full md:w-auto p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Semua Generasi</option>
+                        <option value="">Semua Sundut</option>
                         <?php foreach ($generations as $gen): ?>
                             <option value="<?php echo htmlspecialchars($gen); ?>" <?php echo $generation == $gen ? 'selected' : ''; ?>>
-                                Generasi <?php echo htmlspecialchars($gen); ?>
+                                Sundut <?php echo htmlspecialchars($gen); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -120,7 +123,6 @@ while ($row = $generationResult->fetch_assoc()) {
             </div>
         </div>
 
-        <!-- Profile Grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <?php if ($result && $result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
@@ -148,20 +150,35 @@ while ($row = $generationResult->fetch_assoc()) {
                             <?php if (!empty($row['jenis_kelamin'])): ?>
                                 <p><strong>Jenis Kelamin:</strong> <?php echo htmlspecialchars($row['jenis_kelamin']); ?></p>
                             <?php endif; ?>
+                            
                             <?php if (!empty($row['domisili'])): ?>
                                 <p><strong>Domisili:</strong> <?php echo htmlspecialchars($row['domisili']); ?></p>
                             <?php endif; ?>
+                            
                             <?php if (!empty($row['nama_ayah'])): ?>
                                 <p><strong>Ayah:</strong> <?php echo htmlspecialchars($row['nama_ayah']); ?></p>
                             <?php endif; ?>
+                            
                             <?php if (!empty($row['nama_ibu'])): ?>
                                 <p><strong>Ibu:</strong> <?php echo htmlspecialchars($row['nama_ibu']); ?></p>
                             <?php endif; ?>
-                            <?php
-                            $pasangan = array_filter([$row['nama_istri_1'], $row['nama_istri_2'], $row['nama_istri_3']]);
-                            if (!empty($pasangan)): ?>
-                                <p><strong>Pasangan:</strong> <?php echo htmlspecialchars(implode(', ', $pasangan)); ?></p>
+                            
+                            <?php if ($row['jenis_kelamin'] === 'Laki-laki'): ?>
+                                <?php
+                                $istri = array_filter([
+                                    $row['nama_istri_1'],
+                                    $row['nama_istri_2'],
+                                    $row['nama_istri_3']
+                                ]);
+                                if (!empty($istri)): ?>
+                                    <p><strong>Istri:</strong> <?php echo htmlspecialchars(implode(', ', $istri)); ?></p>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <?php if (!empty($row['nama_suami'])): ?>
+                                    <p><strong>Suami:</strong> <?php echo htmlspecialchars($row['nama_suami']); ?></p>
+                                <?php endif; ?>
                             <?php endif; ?>
+                            
                             <?php if (!empty($row['nama_anak'])): ?>
                                 <p><strong>Anak:</strong> <?php echo htmlspecialchars($row['nama_anak']); ?></p>
                             <?php endif; ?>
@@ -175,30 +192,21 @@ while ($row = $generationResult->fetch_assoc()) {
             <?php endif; ?>
         </div>
 
-        <!-- Pagination (if needed) -->
-        <div class="mt-8 flex justify-center">
-            <!-- Add pagination logic here -->
-        </div>
-
-        <!-- Back button -->
         <div class="mt-8">
             <a href="../../index.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out">Kembali ke Tarombo</a>
         </div>
     </main>
 
-    <!-- Footer Static -->
     <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-auto">
         <div class="container mx-auto text-center">
             <p>&copy; 2024 Smart Family. All rights reserved.</p>
         </div>
     </footer>
 
-    <!-- Footer Fixed -->
     <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center">
         <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
 
-    <!-- JavaScript to Toggle Footer -->
     <script>
         function toggleFooter() {
             const footerStatic = document.getElementById('footer-static');

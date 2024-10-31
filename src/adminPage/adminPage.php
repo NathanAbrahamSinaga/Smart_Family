@@ -2,7 +2,6 @@
 session_start();
 require_once '../../server/config.php';
 
-// Pengecekan session yang lebih spesifik
 if (!isset($_SESSION["admin_id"]) || $_SESSION["user_type"] !== "admin") {
     header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
     exit();
@@ -14,15 +13,12 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Function to delete a forum
 function deleteForum($conn, $forumId) {
-    // First, delete all comments associated with the forum
     $stmt = $conn->prepare("DELETE FROM komentar_forum WHERE id_topik = ?");
     $stmt->bind_param("i", $forumId);
     $stmt->execute();
     $stmt->close();
 
-    // Then, delete the forum itself
     $stmt = $conn->prepare("DELETE FROM topik_forum WHERE id = ?");
     $stmt->bind_param("i", $forumId);
     $result = $stmt->execute();
@@ -30,8 +26,6 @@ function deleteForum($conn, $forumId) {
 
     return $result;
 }
-
-// Function to delete a comment
 function deleteComment($conn, $commentId) {
     $stmt = $conn->prepare("DELETE FROM komentar_forum WHERE id = ?");
     $stmt->bind_param("i", $commentId);
@@ -41,21 +35,17 @@ function deleteComment($conn, $commentId) {
     return $result;
 }
 
-// Function to delete a user
 function deleteUser($conn, $userId) {
-    // First, delete all comments by this user
     $stmt = $conn->prepare("DELETE FROM komentar_forum WHERE id_penulis = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $stmt->close();
 
-    // Then, delete all forums created by this user
     $stmt = $conn->prepare("DELETE FROM topik_forum WHERE id_pembuat = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $stmt->close();
 
-    // Finally, delete the user
     $stmt = $conn->prepare("DELETE FROM users_forum WHERE id = ?");
     $stmt->bind_param("i", $userId);
     $result = $stmt->execute();
@@ -64,7 +54,6 @@ function deleteUser($conn, $userId) {
     return $result;
 }
 
-// Handle delete actions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['delete_forum'])) {
         $forumId = $_POST['forum_id'];
@@ -90,7 +79,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Fetch forums with comments
 $forumsQuery = "SELECT tf.id, tf.judul, uf.username as pembuat, tf.tanggal_dibuat 
                 FROM topik_forum tf 
                 JOIN users_forum uf ON tf.id_pembuat = uf.id 
@@ -116,7 +104,6 @@ while ($forum = $forumsResult->fetch_assoc()) {
     $stmt->close();
 }
 
-// Fetch users
 $usersQuery = "SELECT id, username, nama_lengkap FROM users_forum ORDER BY username";
 $usersResult = $conn->query($usersQuery);
 ?>
@@ -132,38 +119,33 @@ $usersResult = $conn->query($usersQuery);
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100">
-    <!-- Header -->
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
                 <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
-                <h1 class="text-xl font-semibold ml-5">Smart Family Admin Page</h1>
+                <h1 class="text-xl font-semibold ml-5">Admin</h1>
             </div>
             
-            <!-- Mobile Dropdown Menu -->
             <div x-data="{ open: false }" class="relative lg:hidden mr-5">
                 <button @click="open = !open" class="text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300">
-                    <!-- Hamburger icon (3 vertical lines) -->
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
                 <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10">
-                    <a href="adminTaromboPage.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Manage Tarombo</a>
+                    <a href="adminTaromboPage.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Tarombo</a>
                     <a href="../loginPage/logout.php" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Logout</a>
                 </div>
             </div>
 
-            <!-- Desktop Links -->
             <div class="hidden lg:flex items-center">
-                <span class="mr-4">Welcome, Admin <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
-                <a href="adminTaromboPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded mr-4">Manage Tarombo</a>
+                <span class="mr-4">Admin <?php echo htmlspecialchars($_SESSION["username"]); ?></span>
+                <a href="adminTaromboPage.php" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded mr-4">Tarombo</a>
                 <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
     <div class="container mx-auto mt-8 px-4">
         <?php if (isset($successMessage)): ?>
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
@@ -177,9 +159,8 @@ $usersResult = $conn->query($usersQuery);
             </div>
         <?php endif; ?>
 
-        <!-- Forums Section with Dropdown Comments -->
         <section class="mb-8" x-data="{ openForumId: null }">
-            <h2 class="text-2xl font-semibold mb-4">Manage Forums and Comments</h2>
+            <h2 class="text-2xl font-semibold mb-4">Atur Forum dan Komentar</h2>
             <div class="space-y-4">
                 <?php foreach ($forums as $forum): ?>
                     <div class="bg-white shadow rounded-lg overflow-hidden">
@@ -189,7 +170,7 @@ $usersResult = $conn->query($usersQuery);
                                 <p class="text-sm text-gray-600">by <?php echo htmlspecialchars($forum['pembuat']); ?> on <?php echo date("d M Y, H:i", strtotime($forum['tanggal_dibuat'])); ?></p>
                             </div>
                             <div class="flex items-center">
-                                <span class="mr-2"><?php echo count($forum['comments']); ?> comments</span>
+                                <span class="mr-2"><?php echo count($forum['comments']); ?> komentar</span>
                                 <svg class="w-4 h-4 transform transition-transform" :class="{'rotate-180': openForumId === <?php echo $forum['id']; ?>}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                                 </svg>
@@ -226,16 +207,15 @@ $usersResult = $conn->query($usersQuery);
             </div>
         </section>
 
-        <!-- Users Section -->
         <section class="mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Manage Users</h2>
+            <h2 class="text-2xl font-semibold mb-4">Atur Pengguna</h2>
             <div class="overflow-x-auto bg-white shadow rounded-lg">
                 <table class="min-w-full">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="py-3 px-4 text-left">Username</th>
                             <th class="py-3 px-4 text-left">Nama Lengkap</th>
-                            <th class="py-3 px-4 text-left">Action</th>
+                            <th class="py-3 px-4 text-left">Opsi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -257,7 +237,6 @@ $usersResult = $conn->query($usersQuery);
         </section>
     </div>
 
-    <!-- Footer -->
     <footer class="bg-blue-500 text-white py-4 mt-8">
         <div class="container mx-auto text-center">
             <p>&copy; 2024 Smart Family. All rights reserved.</p>

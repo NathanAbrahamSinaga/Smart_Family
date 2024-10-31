@@ -8,14 +8,11 @@ function addAdmin($username, $password) {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    // Hash password
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-    // Prepare statement
     $stmt = $conn->prepare("INSERT INTO admin (username, password) VALUES (?, ?)");
     $stmt->bind_param("ss", $username, $hashed_password);
 
-    // Execute the statement
     if ($stmt->execute()) {
         echo "New admin added successfully";
     } else {
@@ -26,7 +23,6 @@ function addAdmin($username, $password) {
     $conn->close();
 }
 
-// Example usage
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = $_POST['username'];
     $password = $_POST['password'];

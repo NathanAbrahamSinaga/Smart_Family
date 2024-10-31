@@ -16,11 +16,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $forum_id = intval($_POST["forum_id"]);
     $user_id = $_SESSION["user_id"];
 
-    // Mulai transaksi untuk memastikan konsistensi data
     $conn->begin_transaction();
 
     try {
-        // Verifikasi bahwa pengguna adalah pembuat forum
         $stmt = $conn->prepare("SELECT id_pembuat FROM topik_forum WHERE id = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare");
@@ -31,18 +29,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->bind_result($id_pembuat);
         if ($stmt->fetch()) {
             if ($id_pembuat != $user_id) {
-                // Tidak berwenang
                 $stmt->close();
                 throw new Exception("unauthorized");
             }
         } else {
-            // Forum tidak ditemukan
             $stmt->close();
             throw new Exception("not_found");
         }
         $stmt->close();
 
-        // Hapus komentar terkait
         $stmt = $conn->prepare("DELETE FROM komentar_forum WHERE id_topik = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare_delete_comments");
@@ -51,7 +46,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->execute();
         $stmt->close();
 
-        // Hapus forum
         $stmt = $conn->prepare("DELETE FROM topik_forum WHERE id = ?");
         if (!$stmt) {
             throw new Exception("stmt_prepare_delete_forum");
@@ -62,14 +56,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         $stmt->close();
 
-        // Commit transaksi
         $conn->commit();
 
         header("Location: " . BASE_URL . "src/forumPage/daftarForumPage.php?delete_sukses=1");
         exit();
 
     } catch (Exception $e) {
-        // Rollback transaksi jika terjadi error
         $conn->rollback();
 
         $error = $e->getMessage();
