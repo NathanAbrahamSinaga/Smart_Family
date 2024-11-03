@@ -1,15 +1,14 @@
 <?php
-function handleImageUpload($file, $member_id, $generation) {
-    // Enable error reporting for debugging
+require_once __DIR__ . '/../server/config.php';
+
+function handleImageUpload($file, $member_name) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
-    // Check if GD extension is loaded
     if (!extension_loaded('gd')) {
         return ['success' => false, 'error' => 'GD Library is not installed'];
     }
 
-    // Validate file type using mime content
     $mime_type = mime_content_type($file['tmp_name']);
     $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
     
@@ -17,38 +16,27 @@ function handleImageUpload($file, $member_id, $generation) {
         return ['success' => false, 'error' => 'Invalid file type. Only JPG, PNG, and GIF are allowed. Detected type: ' . $mime_type];
     }
 
-    // Set upload directory
-    $upload_dir = __DIR__;
-
-    // Get the next available number
-    $next_number = 0;
-    $existing_files = glob($upload_dir . DIRECTORY_SEPARATOR . '*.webp');
+    $formatted_name = preg_replace('/[^a-zA-Z0-9_]/', '_', $member_name);
+    $formatted_name = strtolower(trim($formatted_name, '_'));
     
-    if (!empty($existing_files)) {
-        $numbers = array_map(function($file) {
-            return (int)pathinfo($file, PATHINFO_FILENAME);
-        }, $existing_files);
-        
-        if (!empty($numbers)) {
-            $next_number = max($numbers) + 1;
-        }
-    }
+    $upload_dir = dirname(__DIR__) . '/assets/foto';
 
-    $new_filename = $next_number . '.webp';
-    $destination = $upload_dir . DIRECTORY_SEPARATOR . $new_filename;
-
-    // Ensure upload directory exists and is writable
     if (!file_exists($upload_dir)) {
-        if (!mkdir($upload_dir, 0777, true)) {
+        if (!mkdir($upload_dir, 0755, true)) {
             return ['success' => false, 'error' => 'Failed to create upload directory'];
         }
     }
 
+    $filename = $formatted_name . '.webp';
+    $destination = $upload_dir . DIRECTORY_SEPARATOR . $filename;
+
     if (!is_writable($upload_dir)) {
-        return ['success' => false, 'error' => 'Upload directory is not writable'];
+        chmod($upload_dir, 0755);
+        if (!is_writable($upload_dir)) {
+            return ['success' => false, 'error' => 'Upload directory is not writable'];
+        }
     }
 
-    // Convert and save image
     try {
         $image = null;
         switch ($mime_type) {
@@ -71,15 +59,38 @@ function handleImageUpload($file, $member_id, $generation) {
             return ['success' => false, 'error' => 'Failed to create image resource'];
         }
 
-        // Convert to WebP
-        $result = imagewebp($image, $destination, 80);
+        if (file_exists($destination)) {
+            unlink($destination);
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $new_width = min(800, $width);
+        $new_height = floor($height * ($new_width / $width));
+        
+        $tmp_image = imagecreatetruecolor($new_width, $new_height);
+        imagealphablending($tmp_image, false);
+        imagesavealpha($tmp_image, true);
+        
+        imagecopyresampled(
+            $tmp_image, $image,
+            0, 0, 0, 0,
+            $new_width, $new_height,
+            $width, $height
+        );
+
+        $result = imagewebp($tmp_image, $destination, 80);
+        
         imagedestroy($image);
+        imagedestroy($tmp_image);
+
+        chmod($destination, 0644);
 
         if (!$result) {
             return ['success' => false, 'error' => 'Failed to save WebP image'];
         }
 
-        $relative_path = '/uploads/' . $new_filename;
+        $relative_path = 'assets/foto/' . $filename;
         return [
             'success' => true,
             'link' => $relative_path,
@@ -90,12 +101,10 @@ function handleImageUpload($file, $member_id, $generation) {
     }
 }
 
-// This part is only used when the file is called directly, not when included
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
-    $member_id = isset($_POST['member_id']) ? $_POST['member_id'] : '0';
-    $generation = isset($_POST['generation']) ? $_POST['generation'] : '1';
+    $member_name = isset($_POST['member_name']) ? $_POST['member_name'] : 'unknown';
     
-    $result = handleImageUpload($_FILES['image'], $member_id, $generation);
+    $result = handleImageUpload($_FILES['image'], $member_name);
 
     header('Content-Type: application/json');
     echo json_encode($result);

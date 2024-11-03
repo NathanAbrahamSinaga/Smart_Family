@@ -116,7 +116,7 @@ $usersResult = $conn->query($usersQuery);
     <title>Admin Page - Smart Family</title>
     <link rel="stylesheet" href="../../assets/css/output.css">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.12.0/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100">
     <header class="bg-blue-500 text-white py-4">
@@ -237,11 +237,31 @@ $usersResult = $conn->query($usersQuery);
         </section>
     </div>
 
-    <footer class="bg-blue-500 text-white py-4 mt-8">
-        <div class="container mx-auto text-center">
-            <p>&copy; 2024 Smart Family. All rights reserved.</p>
-        </div>
+    <footer id="footer-fixed" class="bg-blue-500 text-white py-4 fixed bottom-0 left-0 right-0 flex justify-center items-center">
+        <p class="text-center">&copy; 2024 Smart Family. All rights reserved.</p>
     </footer>
+
+    <script>
+        function toggleFooter() {
+            const footerStatic = document.getElementById('footer-static');
+            const footerFixed = document.getElementById('footer-fixed');
+            const isScrollable = document.body.scrollHeight > window.innerHeight;
+            
+            if (isScrollable) {
+                footerStatic.classList.remove('hidden');
+                footerFixed.classList.add('hidden');
+            } else {
+                footerStatic.classList.add('hidden');
+                footerFixed.classList.remove('hidden');
+            }
+        }
+
+        window.addEventListener('load', toggleFooter);
+
+        window.addEventListener('resize', toggleFooter);
+    </script>
+
+    
 </body>
 </html>
 

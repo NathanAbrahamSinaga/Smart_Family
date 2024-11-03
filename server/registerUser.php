@@ -2,7 +2,32 @@
 session_start();
 require_once 'config.php';
 
+function validateTurnstile($token) {
+    $data = array(
+        'secret' => '',
+        'response' => $token
+    );
+
+    $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $token = $_POST['cf-turnstile-response'] ?? '';
+    $turnstileResult = validateTurnstile($token);
+    
+    if (!$turnstileResult['success']) {
+        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=captcha");
+        exit();
+    }
+
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 
     if ($conn->connect_error) {
@@ -22,17 +47,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (!is_valid_password($password)) {
         header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=password_format");
-        exit();
-    }
-
-    $recaptcha_secret = "";
-    $recaptcha_response = $_POST['g-recaptcha-response'];
-
-    $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
-    $response_data = json_decode($verify_response, true);
-
-    if (!$response_data['success']) {
-        header("Location: " . BASE_URL . "src/loginPage/register.php?register_gagal=captcha");
         exit();
     }
 
@@ -101,6 +115,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 function is_valid_password($password) {
-    return preg_match('/^(?=.*[A-Z])(?=.*[\W_])(?=.*[a-zA-Z0-9]).{8,}$/', $password);
+    return preg_match('/^(?=.*[A-Z])(?=.*[0-9])(?=.*[\W_])(?=.*[a-zA-Z0-9]).{8,}$/', $password);
 }
 ?>

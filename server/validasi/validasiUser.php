@@ -2,15 +2,28 @@
 session_start();
 require_once '../config.php';
 
+function validateTurnstile($token) {
+    $data = array(
+        'secret' => '',
+        'response' => $token
+    );
+
+    $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return json_decode($response, true);
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $recaptcha_secret = "";
-    $recaptcha_response = $_POST["g-recaptcha-response"];
-
-    $verify_response = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response);
-    $response_data = json_decode($verify_response, true);
-
-    if (!$response_data['success']) {
-        $_SESSION['login_error'] = "Mohon verifikasi reCAPTCHA";
+    $token = $_POST['cf-turnstile-response'] ?? '';
+    $turnstileResult = validateTurnstile($token);
+    
+    if (!$turnstileResult['success']) {
         header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=captcha");
         exit();
     }
@@ -25,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST["password"];
 
     if (empty($username) || empty($password)) {
-        header("Location: " . BASE_URL . "src/loginPage/loginForum.php?error=empty");
+        header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=lengkapi");
         exit();
     }
 
@@ -34,21 +47,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    if ($result->num_rows == 1) {
-        $row = $result->fetch_assoc();
-        if (password_verify($password, $row['password'])) {
-            session_unset();
-
-            $_SESSION["user_id"] = $row['id'];
-            $_SESSION["username"] = $row['username'];
-            $_SESSION["user_type"] = "forum";
-
-            header("Location: " . BASE_URL . "src/forumPage/forumPage.php");
-            exit();
-        }
+    if ($result->num_rows == 0) {
+        header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=username");
+        exit();
     }
 
-    header("Location: " . BASE_URL . "src/loginPage/loginForum.php?error=invalid");
+    $row = $result->fetch_assoc();
+    if (!password_verify($password, $row['password'])) {
+        header("Location: " . BASE_URL . "src/loginPage/loginForum.php?login_gagal=password");
+        exit();
+    }
+
+    session_unset();
+    $_SESSION["user_id"] = $row['id'];
+    $_SESSION["username"] = $row['username'];
+    $_SESSION["user_type"] = "forum";
+
+    header("Location: " . BASE_URL . "src/forumPage/forumPage.php");
     exit();
 
     $stmt->close();

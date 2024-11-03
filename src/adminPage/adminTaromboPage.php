@@ -2,6 +2,11 @@
 session_start();
 require_once '../../server/config.php';
 
+if (!isset($_SESSION["admin_id"]) || $_SESSION["user_type"] !== "admin") {
+    header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
+    exit();
+}
+
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -9,15 +14,12 @@ if ($conn->connect_error) {
 
 $message = '';
 
-// Handle form submissions
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'add':
-                // Add new member
                 $stmt = $conn->prepare("INSERT INTO anggota (nama, jenis_kelamin, generasi, domisili, id_ayah, id_ibu, id_istri_1, id_istri_2, id_istri_3, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
-                // Prepare the parameters
                 $nama = $_POST['nama'];
                 $jenis_kelamin = $_POST['jenis_kelamin'];
                 $generasi = $_POST['generasi'];
@@ -39,7 +41,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->close();
                 break;
             case 'edit':
-                // Edit existing member
+                $stmt = $conn->prepare("SELECT foto FROM anggota WHERE id=?");
+                $id = $_POST['id'];
+                $stmt->bind_param("i", $id);
+                $stmt->execute();
+                $stmt->bind_result($existing_foto);
+                $stmt->fetch();
+                $stmt->close();
+
+                if (!empty($_POST['foto']) && $_POST['foto'] !== $existing_foto) {
+                    if (!empty($existing_foto)) {
+                        $old_filepath = dirname(__DIR__) . '/' . $existing_foto;
+                        if (file_exists($old_filepath)) {
+                            unlink($old_filepath);
+                        }
+                    }
+                    $foto = $_POST['foto'];
+                } else {
+                    $foto = $existing_foto;
+                }
+
                 $stmt = $conn->prepare("UPDATE anggota SET nama=?, jenis_kelamin=?, generasi=?, domisili=?, id_ayah=?, id_ibu=?, id_istri_1=?, id_istri_2=?, id_istri_3=?, foto=? WHERE id=?");
 
                 $nama = $_POST['nama'];
@@ -51,8 +72,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
                 $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
                 $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
-                $foto = $_POST['foto'];
-                $id = $_POST['id'];
 
                 $stmt->bind_param("ssissiiiisi", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $foto, $id);
                 
@@ -64,7 +83,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->close();
                 break;
             case 'delete':
-                // Fetch the photo path from the database
                 $stmt = $conn->prepare("SELECT foto FROM anggota WHERE id=?");
                 $id = $_POST['id'];
                 $stmt->bind_param("i", $id);
@@ -73,15 +91,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmt->fetch();
                 $stmt->close();
 
-                // Delete the member from the database
+                if (!empty($foto)) {
+                    $filepath = __DIR__ . '/../../assets/foto/' . basename($foto);
+                    if (file_exists($filepath)) {
+                        unlink($filepath);
+                    }
+                }
+
                 $stmt = $conn->prepare("DELETE FROM anggota WHERE id=?");
                 $stmt->bind_param("i", $id);
-
+                
                 if ($stmt->execute()) {
-                    // If the member is deleted successfully, delete the photo file
-                    if (!empty($foto) && file_exists('../../' . $foto)) {
-                        unlink('../../' . $foto); // Delete the photo file
-                    }
                     $message = "Anggota berhasil dihapus.";
                 } else {
                     $message = "Error: " . $stmt->error;
@@ -92,7 +112,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Fetch all members grouped by generation
 $result = $conn->query("SELECT * FROM anggota ORDER BY generasi, nama");
 $members = [];
 while ($row = $result->fetch_assoc()) {
@@ -254,7 +273,24 @@ ksort($members);
             document.getElementById('idIstri1Input').value = member.id_istri_1;
             document.getElementById('idIstri2Input').value = member.id_istri_2;
             document.getElementById('idIstri3Input').value = member.id_istri_3;
-            document.getElementById('fotoInput').value = member.foto;            
+            document.getElementById('fotoInput').value = member.foto;
+            
+            document.getElementById('imageUpload').value = '';
+
+            const container = document.getElementById('imageUpload').parentElement;
+            const existingPreview = container.querySelector('img');
+            if (existingPreview) {
+                container.removeChild(existingPreview);
+            }
+            
+            if (member.foto) {
+                const imgPreview = document.createElement('img');
+                imgPreview.src = '../../' + member.foto;
+                imgPreview.style.maxWidth = '200px';
+                imgPreview.style.marginTop = '10px';
+                container.appendChild(imgPreview);
+            }
+            
             document.getElementById('submitBtn').innerText = 'Update Anggota';
             document.getElementById('memberForm').scrollIntoView({behavior: 'smooth'});
         }
@@ -262,9 +298,16 @@ ksort($members);
         document.getElementById('imageUpload').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
+                const memberName = document.getElementById('namaInput').value;
+                if (!memberName) {
+                    alert('Harap isi nama anggota terlebih dahulu sebelum mengupload foto');
+                    this.value = '';
+                    return;
+                }
+
                 const formData = new FormData();
                 formData.append('image', file);
-                formData.append('member_id', document.getElementById('memberId').value || '0');
+                formData.append('member_name', memberName);
 
                 fetch('../../uploads/upload_handler.php', {
                     method: 'POST',
@@ -274,17 +317,31 @@ ksort($members);
                 .then(data => {
                     if (data.success) {
                         document.getElementById('fotoInput').value = data.link;
+                        
+                        const container = this.parentElement;
+                        const existingPreview = container.querySelector('img');
+                        if (existingPreview) {
+                            container.removeChild(existingPreview);
+                        }
+                        
+                        const imgPreview = document.createElement('img');
+                        imgPreview.src = '../../' + data.link;
+                        imgPreview.style.maxWidth = '200px';
+                        imgPreview.style.marginTop = '10px';
+                        container.appendChild(imgPreview);
                     } else {
                         throw new Error(data.error || 'Upload failed');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Upload failed: ' + error.message);
+                    alert('Upload gagal: ' + error.message);
+                    this.value = '';
                 });
             }
         });
     </script>
+
 </body>
 </html>
 
