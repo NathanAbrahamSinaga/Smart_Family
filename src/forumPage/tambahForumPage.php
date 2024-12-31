@@ -20,7 +20,7 @@ if (!isset($_SESSION["user_id"])) {
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+                <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded"><</a>
                 <h1 class="text-xl font-semibold ml-5">Forum</h1>
             </div>
             <div>
@@ -43,7 +43,7 @@ if (!isset($_SESSION["user_id"])) {
                 <textarea id="isi" name="isi" rows="6" class="w-full border rounded p-2" required></textarea>
             </div>
             <div class="flex justify-between">
-                <a href="forumPage.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded">Kembali</a>
+                <a href="forumPage.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded"><</a>
                 <button type="submit" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded">Tambah</button>
             </div>
         </form>

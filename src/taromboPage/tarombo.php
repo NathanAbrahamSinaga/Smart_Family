@@ -2,10 +2,10 @@
 session_start();
 require_once '../../server/config.php';
 
-if (!isset($_SESSION["user_id"])) {
-    header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
-    exit();
-}
+// if (!isset($_SESSION["user_id"])) {
+//     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
+//     exit();
+// }
 
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($conn->connect_error) {
@@ -33,26 +33,34 @@ if ($search) {
     $whereClause[] = "a.nama LIKE '%$search%'";
 }
 if ($generation) {
-    $whereClause[] = "a.generasi = '$generation'";
+    if ($generation === '0') {
+        $whereClause[] = "a.generasi = '0'";
+    } else {
+        $whereClause[] = "a.generasi = '$generation'";
+    }
 }
 
 $whereClauseSql = !empty($whereClause) ? "WHERE " . implode(" AND ", $whereClause) : "";
+
+$conn->query("SET SESSION group_concat_max_len = 1000000");
+
+$records_per_page = 12;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $records_per_page;
 
 $query = "
     SELECT a.*,
            ayah.nama as nama_ayah,
            ibu.nama as nama_ibu,
-           -- Info istri untuk anggota laki-laki
            istri1.nama as nama_istri_1,
            istri2.nama as nama_istri_2,
            istri3.nama as nama_istri_3,
-           -- Info suami untuk anggota perempuan
            (SELECT GROUP_CONCAT(DISTINCT suami.nama ORDER BY suami.nama ASC SEPARATOR ', ')
             FROM anggota suami 
-            WHERE suami.id_istri_1 = a.id 
+            WHERE (suami.id_istri_1 = a.id 
                OR suami.id_istri_2 = a.id 
-               OR suami.id_istri_3 = a.id) as nama_suami,
-           GROUP_CONCAT(DISTINCT anak.nama ORDER BY anak.nama ASC SEPARATOR ', ') as nama_anak
+               OR suami.id_istri_3 = a.id)) as nama_suami,
+           GROUP_CONCAT(DISTINCT anak.nama ORDER BY anak.id ASC SEPARATOR ', ') as nama_anak
     FROM anggota a
     LEFT JOIN anggota ayah ON a.id_ayah = ayah.id
     LEFT JOIN anggota ibu ON a.id_ibu = ibu.id
@@ -62,8 +70,18 @@ $query = "
     LEFT JOIN anggota anak ON anak.id_ayah = a.id OR anak.id_ibu = a.id
     $whereClauseSql
     GROUP BY a.id
-    ORDER BY a.nama
+    ORDER BY a.generasi, a.id
+    LIMIT $records_per_page OFFSET $offset
 ";
+
+$count_query = "
+    SELECT COUNT(DISTINCT a.id) as total 
+    FROM anggota a
+    $whereClauseSql
+";
+$count_result = $conn->query($count_query);
+$total_records = $count_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $records_per_page);
 
 $result = $conn->query($query);
 
@@ -86,12 +104,12 @@ while ($row = $generationResult->fetch_assoc()) {
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
+    
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-semibold ml-5">Tarombo</h1>
-            <div>
-                <span class="mr-4"><?php echo htmlspecialchars($_SESSION["username"]); ?></span>
-                <a href="../loginPage/logout.php" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded mr-5">Logout</a>
+            <div class="flex items-center space-x-4">
+                <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded"><</a>
+                <h1 class="text-xl font-semibold ml-5">Tarombo</h1>
             </div>
         </div>
     </header>
@@ -117,6 +135,10 @@ while ($row = $generationResult->fetch_assoc()) {
                         Cari
                     </button>
                 </form>
+                <div class="mt-4 text-gray-600">
+                    Menampilkan <?php echo ($offset + 1); ?>-<?php echo min($offset + $records_per_page, $total_records); ?> 
+                    dari <?php echo $total_records; ?> anggota keluarga
+                </div>
                 <?php if ($search || $generation): ?>
                     <a href="?" class="text-blue-500 hover:underline text-sm mt-1 inline-block">Reset pencarian</a>
                 <?php endif; ?>
@@ -127,26 +149,54 @@ while ($row = $generationResult->fetch_assoc()) {
             <?php if ($result && $result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
                     <div x-data="{ open: false }" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <div class="p-4">
-                            <img 
-                                src="<?php 
-                                    if ($row['foto']) {
-                                        echo '../../' . htmlspecialchars($row['foto']);
-                                    } else {
-                                        echo ($row['jenis_kelamin'] === 'Laki-laki') 
-                                            ? '../../assets/img/default_male.jpg' 
-                                            : '../../assets/img/default_female.jpg';
-                                    }
-                                ?>" 
-                            alt="<?php echo htmlspecialchars($row['nama']); ?>" 
-                            class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg">
-                            <h3 class="text-xl font-semibold text-center mb-2"><?php echo htmlspecialchars($row['nama']); ?></h3>
-                            <p class="text-gray-600 text-center mb-4"><?php echo htmlspecialchars($row['generasi']); ?> Generation</p>
-                            <button @click="open = !open" class="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-300 ease-in-out">
-                                Lihat Detail
-                            </button>
+                        <div class="flex flex-col h-[300px]">
+                            <div class="p-4 flex-1">
+                                <img 
+                                    src="<?php 
+                                        if ($row['foto']) {
+                                            echo '../../' . htmlspecialchars($row['foto']) . '?v=' . time();
+                                        } else {
+                                            echo ($row['jenis_kelamin'] === 'Laki-laki') 
+                                                ? '../../assets/img/default_male.jpg?v=' . time()
+                                                : '../../assets/img/default_female.jpg?v=' . time();
+                                        }
+                                    ?>" 
+                                    alt="<?php echo htmlspecialchars($row['nama']); ?>" 
+                                    class="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg">
+                                
+                                <div class="h-24 flex flex-col justify-center">
+                                    <?php 
+                                        $names = explode('|', $row['nama']);
+                                        foreach ($names as $index => $name) {
+                                            if ($index === 0) {
+                                                echo '<h3 class="text-xl font-semibold text-center line-clamp-2">' . htmlspecialchars($name) . '</h3>';
+                                            } else {
+                                                echo '<h5 class="text-lg font-medium text-center line-clamp-1">' . htmlspecialchars($name) . '</h5>';
+                                            }
+                                        }
+                                    ?>
+                                </div>
+                                
+                                <p class="text-gray-600 text-center mb-4">Sundut <?php echo htmlspecialchars($row['generasi']); ?></p>
+                            </div>
+
+                            <div class="p-4 mt-auto">
+                                <button @click="open = !open" class="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition duration-300 ease-in-out">
+                                    Lihat Detail
+                                </button>
+                            </div>
                         </div>
-                        <div x-show="open" class="p-4 border-t">
+
+                        <div 
+                            x-show="open" 
+                            x-transition:enter="transition ease-out duration-300" 
+                            x-transition:enter-start="opacity-0 transform scale-y-0" 
+                            x-transition:enter-end="opacity-100 transform scale-y-100" 
+                            x-transition:leave="transition ease-in duration-200" 
+                            x-transition:leave-start="opacity-100 transform scale-y-100" 
+                            x-transition:leave-end="opacity-0 transform scale-y-0" 
+                            class="p-4 border-t origin-top"
+                        >
                             <?php if (!empty($row['jenis_kelamin'])): ?>
                                 <p><strong>Jenis Kelamin:</strong> <?php echo htmlspecialchars($row['jenis_kelamin']); ?></p>
                             <?php endif; ?>
@@ -171,16 +221,27 @@ while ($row = $generationResult->fetch_assoc()) {
                                     $row['nama_istri_3']
                                 ]);
                                 if (!empty($istri)): ?>
-                                    <p><strong>Istri:</strong> <?php echo htmlspecialchars(implode(', ', $istri)); ?></p>
+                                    <p><strong>Istri:</strong></p>
+                                    <?php foreach ($istri as $nama_istri): ?>
+                                        <p><?php echo htmlspecialchars($nama_istri); ?></p>
+                                    <?php endforeach; ?>
                                 <?php endif; ?>
-                            <?php else: ?>
-                                <?php if (!empty($row['nama_suami'])): ?>
-                                    <p><strong>Suami:</strong> <?php echo htmlspecialchars($row['nama_suami']); ?></p>
-                                <?php endif; ?>
+                            <?php elseif ($row['jenis_kelamin'] === 'Perempuan' && !empty($row['nama_suami'])): ?>
+                                <p><strong>Suami:</strong></p>
+                                <?php
+                                $suami_list = explode(',', $row['nama_suami']);
+                                foreach ($suami_list as $nama_suami): ?>
+                                    <p><?php echo htmlspecialchars(trim($nama_suami)); ?></p>
+                                <?php endforeach; ?>
                             <?php endif; ?>
-                            
+
                             <?php if (!empty($row['nama_anak'])): ?>
-                                <p><strong>Anak:</strong> <?php echo htmlspecialchars($row['nama_anak']); ?></p>
+                                <p><strong>Anak:</strong></p>
+                                <?php 
+                                $anak_list = explode(',', $row['nama_anak']);
+                                foreach ($anak_list as $nama_anak): ?>
+                                    <p><?php echo htmlspecialchars(trim($nama_anak)); ?></p>
+                                <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -192,8 +253,48 @@ while ($row = $generationResult->fetch_assoc()) {
             <?php endif; ?>
         </div>
 
-        <div class="mt-8">
-            <a href="../../index.php" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out">Kembali ke Tarombo</a>
+
+        <div class="mt-8 flex justify-center items-center space-x-2">
+            <?php if ($total_pages > 1): ?>
+                <div class="flex items-center space-x-2">
+                    <?php if ($page > 1): ?>
+                        <a href="?page=1<?php echo $search ? '&search='.urlencode($search) : ''; ?><?php echo $generation ? '&generation='.urlencode($generation) : ''; ?>" 
+                        class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            &laquo;
+                        </a>
+                        <a href="?page=<?php echo $page-1; ?><?php echo $search ? '&search='.urlencode($search) : ''; ?><?php echo $generation ? '&generation='.urlencode($generation) : ''; ?>" 
+                        class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            &lsaquo;
+                        </a>
+                    <?php endif; ?>
+
+                    <?php
+                    $start_page = max(1, $page - 2);
+                    $end_page = min($total_pages, $page + 2);
+
+                    for ($i = $start_page; $i <= $end_page; $i++): ?>
+                        <a href="?page=<?php echo $i; ?><?php echo $search ? '&search='.urlencode($search) : ''; ?><?php echo $generation ? '&generation='.urlencode($generation) : ''; ?>" 
+                        class="px-3 py-1 <?php echo $i == $page ? 'bg-blue-600' : 'bg-blue-500'; ?> text-white rounded hover:bg-blue-600">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?page=<?php echo $page+1; ?><?php echo $search ? '&search='.urlencode($search) : ''; ?><?php echo $generation ? '&generation='.urlencode($generation) : ''; ?>" 
+                        class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            &rsaquo;
+                        </a>
+                        <a href="?page=<?php echo $total_pages; ?><?php echo $search ? '&search='.urlencode($search) : ''; ?><?php echo $generation ? '&generation='.urlencode($generation) : ''; ?>" 
+                        class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            &raquo;
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="mt-8 space-x-4">
+            <a href="../../assets/file/tarombo.pdf" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out">PDF</a>  
         </div>
     </main>
 

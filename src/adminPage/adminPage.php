@@ -122,7 +122,7 @@ $usersResult = $conn->query($usersQuery);
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+                <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded"><</a>
                 <h1 class="text-xl font-semibold ml-5">Admin</h1>
             </div>
             
@@ -165,11 +165,18 @@ $usersResult = $conn->query($usersQuery);
                 <?php foreach ($forums as $forum): ?>
                     <div class="bg-white shadow rounded-lg overflow-hidden">
                         <div class="p-4 flex justify-between items-center cursor-pointer" @click="openForumId = openForumId === <?php echo $forum['id']; ?> ? null : <?php echo $forum['id']; ?>">
-                            <div>
-                                <h3 class="font-semibold"><?php echo htmlspecialchars($forum['judul']); ?></h3>
+                            <div class="flex-1">
+                                <h3 class="font-semibold">
+                                    <span class="md:hidden">
+                                        <?php echo htmlspecialchars(strlen($forum['judul']) > 23 ? substr($forum['judul'], 0, 23) . '...' : $forum['judul']); ?>
+                                    </span>
+                                    <span class="hidden md:inline">
+                                        <?php echo htmlspecialchars(strlen($forum['judul']) > 50 ? substr($forum['judul'], 0, 50) . '...' : $forum['judul']); ?>
+                                    </span>
+                                </h3>
                                 <p class="text-sm text-gray-600">by <?php echo htmlspecialchars($forum['pembuat']); ?> on <?php echo date("d M Y, H:i", strtotime($forum['tanggal_dibuat'])); ?></p>
                             </div>
-                            <div class="flex items-center">
+                            <div class="flex items-center ml-4">
                                 <span class="mr-2"><?php echo count($forum['comments']); ?> komentar</span>
                                 <svg class="w-4 h-4 transform transition-transform" :class="{'rotate-180': openForumId === <?php echo $forum['id']; ?>}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -188,11 +195,18 @@ $usersResult = $conn->query($usersQuery);
                                     <?php foreach ($forum['comments'] as $comment): ?>
                                         <div class="bg-white p-3 rounded shadow mb-2">
                                             <div class="flex justify-between items-start">
-                                                <div>
-                                                    <p class="text-sm"><?php echo htmlspecialchars(substr($comment['isi'], 0, 100)) . (strlen($comment['isi']) > 100 ? '...' : ''); ?></p>
+                                                <div class="flex-1 pr-4">
+                                                    <p class="text-sm">
+                                                        <span class="md:hidden">
+                                                            <?php echo htmlspecialchars(strlen($comment['isi']) > 23 ? substr($comment['isi'], 0, 23) . '...' : $comment['isi']); ?>
+                                                        </span>
+                                                        <span class="hidden md:inline">
+                                                            <?php echo htmlspecialchars(strlen($comment['isi']) > 100 ? substr($comment['isi'], 0, 100) . '...' : $comment['isi']); ?>
+                                                        </span>
+                                                    </p>
                                                     <p class="text-xs text-gray-600 mt-1">by <?php echo htmlspecialchars($comment['penulis']); ?> on <?php echo date("d M Y, H:i", strtotime($comment['tanggal_dibuat'])); ?></p>
                                                 </div>
-                                                <form method="POST" onsubmit="return confirm('Are you sure you want to delete this comment?');">
+                                                <form method="POST" onsubmit="return confirm('Are you sure you want to delete this comment?');" class="flex-shrink-0">
                                                     <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
                                                     <button type="submit" name="delete_comment" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded">Delete</button>
                                                 </form>

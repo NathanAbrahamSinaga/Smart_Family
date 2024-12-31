@@ -33,7 +33,7 @@ $stmt->close();
         <header class="bg-blue-500 text-white py-4">
             <div class="container mx-auto flex justify-between items-center">
                 <div class="flex items-center space-x-4">
-                    <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+                    <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded"><</a>
                     <h1 class="text-xl font-semibold ml-5">Forum</h1>
                 </div>
                 <div>
@@ -54,10 +54,12 @@ $stmt->close();
                 <div class="space-y-4">
                     <?php while($row = $result->fetch_assoc()): ?>
                         <div class="bg-white p-4 rounded shadow flex justify-between items-center">
-                            <div>
-                                <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:underline font-semibold"><?php echo htmlspecialchars($row['judul']); ?></a>
-                                <p class="text-sm text-gray-500">Dibuat pada <?php echo date("d M Y, H:i", strtotime($row['tanggal_dibuat'])); ?></p>
-                            </div>
+                        <div>
+                            <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:underline font-semibold break-words break-all max-w-full">
+                                <?php echo htmlspecialchars($row['judul']); ?>
+                            </a>
+                            <p class="text-sm text-gray-500">Dibuat pada <?php echo date("d M Y, H:i", strtotime($row['tanggal_dibuat'])); ?></p>
+                        </div>
                             <form action="../../server/validasi/deleteForum.php" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus forum ini?');">
                                 <input type="hidden" name="forum_id" value="<?php echo $row['id']; ?>">
                                 <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Hapus</button>

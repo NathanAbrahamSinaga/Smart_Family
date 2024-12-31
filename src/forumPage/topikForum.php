@@ -44,13 +44,6 @@ $stmt->bind_param("i", $forum_id);
 $stmt->execute();
 $comments = $stmt->get_result();
 $stmt->close();
-
-function wrapLongWords($text, $max_char = 30) {
-    return preg_replace('/\S{' . $max_char . '}(?!\s)/', "$0\n", $text);
-}
-
-$forum['isi'] = wrapLongWords($forum['isi'], 60);
-$forum['judul'] = wrapLongWords($forum['judul'], 60);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -60,45 +53,12 @@ $forum['judul'] = wrapLongWords($forum['judul'], 60);
     <title><?php echo htmlspecialchars($forum['judul']); ?> - Smart Family Forum</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/output.css">
-    <script>
-        function adjustMaxChar() {
-            const forumTitle = document.querySelector('.forum-title');
-            const forumContent = document.querySelector('.forum-text');
-            const commentContents = document.querySelectorAll('.comment-text');
-
-            let maxCharTitle, maxCharContent;
-
-            if (window.innerWidth < 640) {
-                maxCharTitle = 15;
-                maxCharContent = 15;
-            } else if (window.innerWidth < 1024) {
-                maxCharTitle = 40;
-                maxCharContent = 40;
-            } else {
-                maxCharTitle = 60;
-                maxCharContent = 60;
-            }
-
-            forumTitle.textContent = wrapLongWords(forumTitle.textContent, maxCharTitle);
-            forumContent.textContent = wrapLongWords(forumContent.textContent, maxCharContent);
-            commentContents.forEach(content => {
-                content.textContent = wrapLongWords(content.textContent, maxCharContent);
-            });
-        }
-
-        function wrapLongWords(text, max_char) {
-            return text.replace(new RegExp(`\\S{${max_char}}(?!\\s)`, 'g'), '$&\n');
-        }
-
-        window.addEventListener('resize', adjustMaxChar);
-        window.addEventListener('load', adjustMaxChar);
-    </script>
 </head>
 <body class="bg-gray-100">
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+                <a href="forumPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded"><</a>
                 <h1 class="text-xl font-semibold ml-5">Forum</h1>
             </div>
             <div>
@@ -110,9 +70,11 @@ $forum['judul'] = wrapLongWords($forum['judul'], 60);
 
     <div class="container mx-auto mt-8 px-4">
         <div class="bg-white p-6 rounded shadow">
-            <h2 class="text-2xl font-bold mb-2 forum-title"><?php echo htmlspecialchars($forum['judul']); ?></h2>
-            <span class="text-sm text-gray-500">by <?php echo htmlspecialchars($forum['username']); ?> on <?php echo date("d M Y, H:i", strtotime($forum['tanggal_dibuat'])); ?></span>
-            <p class="mt-4 text-gray-700 forum-text"><?php echo nl2br(htmlspecialchars($forum['isi'])); ?></p>
+            <div class="w-full max-w-full break-words break-all">
+                <h2 class="text-2xl font-bold mb-2"><?php echo htmlspecialchars($forum['judul']); ?></h2>
+                <span class="text-sm text-gray-500">by <?php echo htmlspecialchars($forum['username']); ?> on <?php echo date("d M Y, H:i", strtotime($forum['tanggal_dibuat'])); ?></span>
+                <p class="mt-4 text-gray-700"><?php echo nl2br(htmlspecialchars($forum['isi'])); ?></p>
+            </div>
         </div>
 
         <div class="mt-8">
@@ -121,18 +83,20 @@ $forum['judul'] = wrapLongWords($forum['judul'], 60);
                 <div class="space-y-4">
                     <?php while($comment = $comments->fetch_assoc()): ?>
                         <div class="bg-white p-4 rounded shadow">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold"><?php echo htmlspecialchars($comment['username']); ?></span>
-                                <span class="text-sm text-gray-500"><?php echo date("d M Y, H:i", strtotime($comment['tanggal_dibuat'])); ?></span>
+                            <div class="w-full max-w-full break-words break-all">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold"><?php echo htmlspecialchars($comment['username']); ?></span>
+                                    <span class="text-sm text-gray-500"><?php echo date("d M Y, H:i", strtotime($comment['tanggal_dibuat'])); ?></span>
+                                </div>
+                                <p class="mt-2 text-gray-700"><?php echo nl2br(htmlspecialchars($comment['isi'])); ?></p>
+                                
+                                <?php if ($comment['id_penulis'] == $_SESSION["user_id"]): ?>
+                                    <form action="../../server/validasi/deleteComment.php" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus komentar ini?');">
+                                        <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
+                                        <button type="submit" class="mt-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Hapus</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
-                            <p class="mt-2 text-gray-700 comment-text"><?php echo nl2br(htmlspecialchars($comment['isi'])); ?></p>
-                            
-                            <?php if ($comment['id_penulis'] == $_SESSION["user_id"]): ?>
-                                <form action="../../server/validasi/deleteComment.php" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus komentar ini?');">
-                                    <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
-                                    <button type="submit" class="mt-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Hapus</button>
-                                </form>
-                            <?php endif; ?>
                         </div>
                     <?php endwhile; ?>
                 </div>
@@ -179,7 +143,6 @@ $forum['judul'] = wrapLongWords($forum['judul'], 60);
         }
 
         window.addEventListener('load', toggleFooter);
-
         window.addEventListener('resize', toggleFooter);
     </script>
 </body>

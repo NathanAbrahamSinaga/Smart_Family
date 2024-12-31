@@ -36,7 +36,7 @@ if (isset($_SESSION["admin_id"]) && $_SESSION["user_type"] === "admin") {
                 <input type="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" required>
             </div>
             <div class="mb-4 flex justify-center">
-                <div class="cf-turnstile" data-sitekey="" data-theme="light"></div>
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAAAy9o9fJuZx_pvTU" data-theme="light"></div>
             </div>
             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Login</button>
         </form>

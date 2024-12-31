@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../server/config.php';
 
-function handleImageUpload($file, $member_name) {
+function handleImageUpload($file, $member_id) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
@@ -16,8 +16,8 @@ function handleImageUpload($file, $member_name) {
         return ['success' => false, 'error' => 'Invalid file type. Only JPG, PNG, and GIF are allowed. Detected type: ' . $mime_type];
     }
 
-    $formatted_name = preg_replace('/[^a-zA-Z0-9_]/', '_', $member_name);
-    $formatted_name = strtolower(trim($formatted_name, '_'));
+    // Gunakan member_id untuk nama file
+    $filename = 'member_' . $member_id . '.webp';
     
     $upload_dir = dirname(__DIR__) . '/assets/foto';
 
@@ -27,7 +27,6 @@ function handleImageUpload($file, $member_name) {
         }
     }
 
-    $filename = $formatted_name . '.webp';
     $destination = $upload_dir . DIRECTORY_SEPARATOR . $filename;
 
     if (!is_writable($upload_dir)) {
@@ -102,9 +101,15 @@ function handleImageUpload($file, $member_name) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['image'])) {
-    $member_name = isset($_POST['member_name']) ? $_POST['member_name'] : 'unknown';
+    $member_id = isset($_POST['member_id']) ? $_POST['member_id'] : null;
     
-    $result = handleImageUpload($_FILES['image'], $member_name);
+    if (!$member_id) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Member ID is required']);
+        exit;
+    }
+    
+    $result = handleImageUpload($_FILES['image'], $member_id);
 
     header('Content-Type: application/json');
     echo json_encode($result);

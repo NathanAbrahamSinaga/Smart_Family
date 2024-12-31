@@ -35,30 +35,12 @@ function truncateText($text, $limit = 50) {
     <title>Forum - Smart Family</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/output.css">
-    <style>
-        .forum-box {
-            transition: box-shadow 0.3s ease-in-out;
-        }
-        .forum-box:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        .forum-box {
-            transition: box-shadow 0.3s ease-in-out;
-        }
-        .forum-box:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .forum-title {
-            word-break: break-word;
-        }
-    </style>
 </head>
 <body class="bg-gray-100">
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
+                <a href="../../index.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded"><</a>
                 <h1 class="text-xl font-semibold ml-5">Forum</h1>
             </div>
             <div>
@@ -79,18 +61,17 @@ function truncateText($text, $limit = 50) {
         </div>
 
         <?php if ($result->num_rows > 0): ?>
-            <div class="space-y-6">
+            <div class="space-y-4">
                 <?php while($row = $result->fetch_assoc()): ?>
-                    <div class="bg-white p-6 rounded shadow forum-box">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-xl font-bold forum-title">
-                                <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:underline">
-                                    <?php echo htmlspecialchars($row['judul']); ?>
-                                </a>
-                            </h3>
-                            <span class="text-sm text-gray-500">
-                                by <?php echo htmlspecialchars($row['username']); ?> on <?php echo date("d M Y, H:i", strtotime($row['tanggal_dibuat'])); ?>
-                            </span>
+                    <div class="bg-white p-4 rounded shadow flex justify-between items-center">
+                        <div class="w-full max-w-full break-words break-all">
+                            <a href="topikForum.php?id=<?php echo $row['id']; ?>" class="text-blue-600 hover:underline font-semibold">
+                                <?php echo htmlspecialchars($row['judul']); ?>
+                            </a>
+                            <p class="text-sm text-gray-500">by <?php echo htmlspecialchars($row['username']); ?> on <?php echo date("d M Y, H:i", strtotime($row['tanggal_dibuat'])); ?></p>
+                            <p class="text-gray-700 mt-2 truncate w-full">
+                                <?php echo htmlspecialchars(substr($row['isi'], 0, 50)) . (strlen($row['isi']) > 50 ? '...' : ''); ?>
+                            </p>
                         </div>
                     </div>
                 <?php endwhile; ?>
@@ -98,7 +79,6 @@ function truncateText($text, $limit = 50) {
         <?php else: ?>
             <p class="text-gray-700">Belum ada forum. <a href="tambahForumPage.php" class="text-blue-500 hover:underline">Buat forum pertama Anda</a>.</p>
         <?php endif; ?>
-        </div>
     </div>
 
     <footer id="footer-static" class="bg-blue-500 text-white py-4 mt-20">
@@ -127,36 +107,7 @@ function truncateText($text, $limit = 50) {
         }
 
         window.addEventListener('load', toggleFooter);
-
         window.addEventListener('resize', toggleFooter);
-
-        function adjustMaxChar() {
-            const forumTitles = document.querySelectorAll('.forum-title');
-
-            let maxCharTitle;
-
-            if (window.innerWidth < 640) {
-                maxCharTitle = 15;
-            } else if (window.innerWidth < 1024) {
-                maxCharTitle = 40;
-            } else {
-                maxCharTitle = 60;
-            }
-
-            forumTitles.forEach(title => {
-                const link = title.querySelector('a');
-                if (link) {
-                    link.textContent = wrapLongWords(link.textContent, maxCharTitle);
-                }
-            });
-        }
-
-        function wrapLongWords(text, max_char) {
-            return text.replace(new RegExp(`\\S{${max_char}}(?!\\s)`, 'g'), '$&\n');
-        }
-
-        window.addEventListener('resize', adjustMaxChar);
-        window.addEventListener('load', adjustMaxChar);
     </script>
 </body>
 </html>

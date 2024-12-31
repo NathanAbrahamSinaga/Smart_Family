@@ -22,7 +22,7 @@ require_once '../../server/config.php';
                 <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nama_lengkap" name="nama_lengkap" required>
             </div>
             <div class="mb-4">
-                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username (nama panggilan)</label>
                 <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="username" name="username" required>
             </div>
             <div class="mb-4">
@@ -38,7 +38,7 @@ require_once '../../server/config.php';
                 <input type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="kode" name="kode" required>
             </div>
             <div class="mb-4 flex justify-center">
-                <div class="cf-turnstile" data-sitekey="" data-theme="light"></div>
+                <div class="cf-turnstile" data-sitekey="0x4AAAAAAAy9o9fJuZx_pvTU" data-theme="light"></div>
             </div>
             <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded">Register</button>
         </form>
