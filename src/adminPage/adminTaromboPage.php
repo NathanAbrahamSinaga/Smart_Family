@@ -1,107 +1,8 @@
 <?php
 session_start();
-require_once '../../server/config.php';
+require_once '../../server/adminTaromboBackend.php';
 
-if (!isset($_SESSION["admin_id"]) || $_SESSION["user_type"] !== "admin") {
-    header("Location: " . BASE_URL . "src/loginPage/loginAdmin.php");
-    exit();
-}
-
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$message = '';
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'add':
-                $id = $_POST['new_id'];
-                $stmt = $conn->prepare("INSERT INTO anggota (id, nama, jenis_kelamin, generasi, domisili, id_ayah, id_ibu, id_istri_1, id_istri_2, id_istri_3, foto) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                
-                $nama = $_POST['nama'];
-                $jenis_kelamin = $_POST['jenis_kelamin'];
-                $generasi = $_POST['generasi'];
-                $domisili = $_POST['domisili'];
-                $id_ayah = !empty($_POST['id_ayah']) ? $_POST['id_ayah'] : null;
-                $id_ibu = !empty($_POST['id_ibu']) ? $_POST['id_ibu'] : null;
-                $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
-                $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
-                $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
-                $foto = $_POST['foto'];
-
-                $stmt->bind_param("ississiiiis", $id, $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $foto);
-                
-                if ($stmt->execute()) {
-                    $message = "Anggota baru berhasil ditambahkan.";
-                } else {
-                    $message = "Error: " . $stmt->error;
-                }
-                $stmt->close();
-                break;
-            case 'edit':
-                $id = $_POST['id'];
-                $stmt = $conn->prepare("UPDATE anggota SET nama=?, jenis_kelamin=?, generasi=?, domisili=?, id_ayah=?, id_ibu=?, id_istri_1=?, id_istri_2=?, id_istri_3=? WHERE id=?");
-
-                $nama = $_POST['nama'];
-                $jenis_kelamin = $_POST['jenis_kelamin'];
-                $generasi = $_POST['generasi'];
-                $domisili = $_POST['domisili'];
-                $id_ayah = !empty($_POST['id_ayah']) ? $_POST['id_ayah'] : null;
-                $id_ibu = !empty($_POST['id_ibu']) ? $_POST['id_ibu'] : null;
-                $id_istri_1 = !empty($_POST['id_istri_1']) ? $_POST['id_istri_1'] : null;
-                $id_istri_2 = !empty($_POST['id_istri_2']) ? $_POST['id_istri_2'] : null;
-                $id_istri_3 = !empty($_POST['id_istri_3']) ? $_POST['id_istri_3'] : null;
-
-                if ($stmt->bind_param("ssisiiiiii", $nama, $jenis_kelamin, $generasi, $domisili, $id_ayah, $id_ibu, $id_istri_1, $id_istri_2, $id_istri_3, $id)) {
-                    if ($stmt->execute()) {
-                        $message = "Data anggota berhasil diperbarui.";
-                    } else {
-                        $message = "Error: " . $stmt->error;
-                    }
-                } else {
-                    $message = "Error: " . $stmt->error;
-                }
-                $stmt->close();
-                break;
-            case 'delete':
-                $id = $_POST['id'];
-                $stmt = $conn->prepare("SELECT foto FROM anggota WHERE id=?");
-                $stmt->bind_param("i", $id);
-                $stmt->execute();
-                $stmt->bind_result($foto);
-                $stmt->fetch();
-                $stmt->close();
-
-                if (!empty($foto)) {
-                    $filepath = __DIR__ . '/../../assets/foto/' . basename($foto);
-                    if (file_exists($filepath)) {
-                        unlink($filepath);
-                    }
-                }
-
-                $stmt = $conn->prepare("DELETE FROM anggota WHERE id=?");
-                $stmt->bind_param("i", $id);
-                
-                if ($stmt->execute()) {
-                    $message = "Anggota berhasil dihapus.";
-                } else {
-                    $message = "Error: " . $stmt->error;
-                }
-                $stmt->close();
-                break;
-        }
-    }
-}
-
-$result = $conn->query("SELECT * FROM anggota ORDER BY generasi, id");
-$members = [];
-while ($row = $result->fetch_assoc()) {
-    $members[$row['generasi']][] = $row;
-}
-ksort($members);
+$successMessage = $message ?? null;
 ?>
 
 <!DOCTYPE html>
@@ -110,8 +11,8 @@ ksort($members);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Tarombo - Smart Family</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../../assets/css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
         table {
             border-collapse: collapse;
@@ -127,79 +28,83 @@ ksort($members);
         }
     </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <h1 class="text-3xl font-bold mb-6">Admin Tarombo</h1>
+<body class="bg-gray-100 dark:bg-gray-900 p-8">
+    <h1 class="text-3xl font-bold mb-6 text-gray-900 dark:text-white">Admin Tarombo</h1>
     
-    <?php if ($message): ?>
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <span class="block sm:inline"><?php echo $message; ?></span>
+    <?php if ($successMessage): ?>
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 dark:bg-green-800 dark:border-green-600 dark:text-green-200" role="alert">
+            <span class="block sm:inline"><?php echo $successMessage; ?></span>
         </div>
     <?php endif; ?>
 
-        <form id="memberForm" action="" method="POST" class="bg-white p-4 rounded-lg shadow-md mb-6 max-w-lg mx-auto">
-        <h2 id="formTitle" class="text-xl font-semibold mb-4">Tambah Anggota Baru</h2>
+    <form id="memberForm" action="" method="POST" class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6 max-w-lg mx-auto">
+        <h2 id="formTitle" class="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Tambah Anggota Baru</h2>
         <input type="hidden" name="action" id="formAction" value="add">
         <input type="hidden" name="id" id="memberId">
 
         <div class="space-y-6">
             <div id="newMemberFields" class="space-y-6" style="display: block;">
                 <div>
-                    <label for="newIdInput" class="block text-sm font-medium text-gray-700">ID Baru (Harus diisi!!)</label>
-                    <input type="number" name="new_id" id="newIdInput" placeholder="ID Baru" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <label for="newIdInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Baru (Harus diisi!!)</label>
+                    <input type="number" name="new_id" id="newIdInput" placeholder="ID Baru" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                 </div>
                 <div>
-                    <label for="imageUpload" class="block text-sm font-medium text-gray-700">Foto Profil</label>
-                    <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <label for="imageUpload" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Foto Profil</label>
+                    <input type="file" id="imageUpload" accept="image/*" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     <input type="hidden" name="foto" id="fotoInput">
                 </div>
             </div>
                 
             <div>
-                <label for="namaInput" class="block text-sm font-medium text-gray-700">Nama</label>
-                <input type="text" name="nama" id="namaInput" placeholder="Nama" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="namaInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nama</label>
+                <input type="text" name="nama" id="namaInput" placeholder="Nama" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="jenisKelaminInput" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
-                <select name="jenis_kelamin" id="jenisKelaminInput" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="jenisKelaminInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Jenis Kelamin</label>
+                <select name="jenis_kelamin" id="jenisKelaminInput" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     <option value="Laki-laki">Laki-laki</option>
                     <option value="Perempuan">Perempuan</option>
                 </select>
             </div>
             
             <div>
-                <label for="generasiInput" class="block text-sm font-medium text-gray-700">Generasi</label>
-                <input type="number" name="generasi" id="generasiInput" placeholder="Generasi" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="generasiInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Generasi</label>
+                <select name="query_boolean" id="queryBooleanInput" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                    <option value="sundut">Sundut</option>
+                    <option value="bere">Bere</option>
+                </select>
+                <input type="number" name="generasi" id="generasiInput" placeholder="Generasi" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="domisiliInput" class="block text-sm font-medium text-gray-700">Domisili</label>
-                <input type="text" name="domisili" id="domisiliInput" placeholder="Domisili" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="domisiliInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Domisili</label>
+                <input type="text" name="domisili" id="domisiliInput" placeholder="Domisili" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="idAyahInput" class="block text-sm font-medium text-gray-700">ID Ayah (Optional)</label>
-                <input type="number" name="id_ayah" id="idAyahInput" placeholder="ID Ayah" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="idAyahInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Ayah (Optional)</label>
+                <input type="number" name="id_ayah" id="idAyahInput" placeholder="ID Ayah" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="idIbuInput" class="block text-sm font-medium text-gray-700">ID Ibu (Optional)</label>
-                <input type="number" name="id_ibu" id="idIbuInput" placeholder="ID Ibu" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="idIbuInput" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Ibu (Optional)</label>
+                <input type="number" name="id_ibu" id="idIbuInput" placeholder="ID Ibu" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="idIstri1Input" class="block text-sm font-medium text-gray-700">ID Istri 1 (Optional)</label>
-                <input type="number" name="id_istri_1" id="idIstri1Input" placeholder="ID Istri 1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="idIstri1Input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Istri 1 (Optional)</label>
+                <input type="number" name="id_istri_1" id="idIstri1Input" placeholder="ID Istri 1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="idIstri2Input" class="block text-sm font-medium text-gray-700">ID Istri 2 (Optional)</label>
-                <input type="number" name="id_istri_2" id="idIstri2Input" placeholder="ID Istri 2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="idIstri2Input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Istri 2 (Optional)</label>
+                <input type="number" name="id_istri_2" id="idIstri2Input" placeholder="ID Istri 2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
             
             <div>
-                <label for="idIstri3Input" class="block text-sm font-medium text-gray-700">ID Istri 3 (Optional)</label>
-                <input type="number" name="id_istri_3" id="idIstri3Input" placeholder="ID Istri 3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <label for="idIstri3Input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Istri 3 (Optional)</label>
+                <input type="number" name="id_istri_3" id="idIstri3Input" placeholder="ID Istri 3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
             </div>
         </div>
         
@@ -209,38 +114,90 @@ ksort($members);
     </form>
 
     <div class="mb-6">
-        <label for="generationSelect" class="block text-sm font-medium text-gray-700">Pilih Sundut:</label>
-        <select id="generationSelect" class="mt-1 block w-64 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-            <option value="">Pilih Sundut</option>
+        <label for="generationSelect" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sundut:</label>
+        <select id="generationSelect" class="mt-1 block w-64 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+            <option value="">Sundut</option>
             <?php
             foreach (array_keys($members) as $gen) {
-                echo "<option value=\"$gen\">Sundut $gen</option>";
+                echo "<option value=\"$gen\">$gen</option>";
             }
             ?>
         </select>
     </div>
 
+    <?php
+    $sundutMembers = [];
+    $bereMembers = [];
+    foreach ($members as $generasi => $list) {
+        $sundutMembers[$generasi] = array_filter($list, function($member) {
+            return $member['query_boolean'] === 'sundut';
+        });
+        $bereMembers[$generasi] = array_filter($list, function($member) {
+            return $member['query_boolean'] === 'bere';
+        });
+    }
+    ?>
+
     <?php foreach ($members as $generasi => $list): ?>
+        <!-- Tabel Sundut -->
         <div id="sundut<?php echo $generasi; ?>" class="generation-table" style="display: none;">
-            <h2 class="text-xl font-bold mb-4">Sundut <?php echo $generasi; ?></h2>
+            <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Sundut <?php echo $generasi; ?></h2>
             <table class="mb-8">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nama</th>
-                        <th>Jenis Kelamin</th>
-                        <th>Domisili</th>
-                        <th>Foto</th>
-                        <th>Opsi</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">ID</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Nama</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Jenis Kelamin</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Domisili</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Foto</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Opsi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($list as $member): ?>
-                        <tr>
-                            <td><?php echo $member['id']; ?></td>
-                            <td><?php echo $member['nama']; ?></td>
-                            <td><?php echo $member['jenis_kelamin']; ?></td>
-                            <td><?php echo $member['domisili']; ?></td>
+                    <?php foreach ($sundutMembers[$generasi] as $member): ?>
+                        <tr class="bg-white dark:bg-gray-800">
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['id']; ?></td>
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['nama']; ?></td>
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['jenis_kelamin']; ?></td>
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['domisili']; ?></td>
+                            <td>
+                                <img src="<?php echo !empty($member['foto']) ? '../../' . $member['foto'] . '?v=' . time() : ($member['jenis_kelamin'] == 'Laki-laki' ? '../../assets/img/default_male.jpg' : '../../assets/img/default_female.jpg'); ?>" alt="Foto" width="50">
+                            </td>
+                            <td style="text-align: center; vertical-align: middle;">
+                                <button onclick="editMember(<?php echo htmlspecialchars(json_encode($member)); ?>)" class="w-22 mb-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-2 rounded">Edit</button>
+                                <form action="" method="POST" class="inline-block">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="<?php echo $member['id']; ?>">
+                                    <button type="submit" class="w-22 bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-2 rounded" onclick="return confirm('Anda yakin ingin menghapus anggota ini?')">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabel Bere -->
+        <div id="bere<?php echo $generasi; ?>" class="generation-table" style="display: none;">
+            <h2 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">Bere <?php echo $generasi; ?></h2>
+            <table class="mb-8">
+                <thead>
+                    <tr>
+                        <th class="bg-gray-200 dark:bg-gray-500">ID</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Nama</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Jenis Kelamin</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Domisili</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Foto</th>
+                        <th class="bg-gray-200 dark:bg-gray-500">Opsi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($bereMembers[$generasi] as $member): ?>
+                        <tr class="bg-white dark:bg-gray-800">
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['id']; ?></td>
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['nama']; ?></td>
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['jenis_kelamin']; ?></td>
+                            <td class="text-gray-900 dark:text-white"><?php echo $member['domisili']; ?></td>
                             <td>
                                 <img src="<?php echo !empty($member['foto']) ? '../../' . $member['foto'] . '?v=' . time() : ($member['jenis_kelamin'] == 'Laki-laki' ? '../../assets/img/default_male.jpg' : '../../assets/img/default_female.jpg'); ?>" alt="Foto" width="50">
                             </td>
@@ -263,10 +220,50 @@ ksort($members);
         <a href="adminPage.php" class="ml-5 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded">Kembali</a>
     </div>
 
+    <button onclick="toggleDarkMode()" class="fixed bottom-4 right-4 p-3 bg-gray-200 dark:bg-gray-700 rounded-full hover:scale-110 transition-transform duration-200">
+        <span class="dark:hidden">🌙</span>
+        <span class="hidden dark:inline">☀️</span>
+    </button>
+
     <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                }
+            }
+        }
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeTheme);
+
         function editMember(member) {
             document.getElementById('formTitle').innerText = 'Edit Anggota';
             document.getElementById('formAction').value = 'edit';
+            document.getElementById('queryBooleanInput').value = member.query_boolean || 'sundut';
             document.getElementById('memberId').value = member.id;
             document.getElementById('newMemberFields').style.display = 'none';
             document.getElementById('newIdInput').removeAttribute('required');
@@ -385,11 +382,17 @@ ksort($members);
             });
             
             if (selectedGen) {
-                const selectedTable = document.getElementById('sundut' + selectedGen);
-                if (selectedTable) {
-                    selectedTable.style.display = 'block';
-                    localStorage.setItem('selectedSundut', selectedGen);
+                const sundutTable = document.getElementById('sundut' + selectedGen);
+                const bereTable = document.getElementById('bere' + selectedGen);
+                
+                if (sundutTable) {
+                    sundutTable.style.display = 'block';
                 }
+                if (bereTable) {
+                    bereTable.style.display = 'block';
+                }
+                
+                localStorage.setItem('selectedSundut', selectedGen);
             }
         }
 
@@ -430,10 +433,5 @@ ksort($members);
             });
         });
     </script>
-
 </body>
 </html>
-
-<?php
-$conn->close();
-?>

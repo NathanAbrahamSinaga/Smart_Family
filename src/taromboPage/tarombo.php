@@ -1,96 +1,5 @@
 <?php
-session_start();
-require_once '../../server/config.php';
-
-// if (!isset($_SESSION["user_id"])) {
-//     header("Location: " . BASE_URL . "src/loginPage/loginTarombo.php");
-//     exit();
-// }
-
-$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$search = isset($_GET['search']) ? $conn->real_escape_string($_GET['search']) : '';
-$generation = isset($_GET['generation']) ? $conn->real_escape_string($_GET['generation']) : '';
-
-if (isset($_GET['id']) && empty($search)) {
-    $memberId = $conn->real_escape_string($_GET['id']);
-    $nameQuery = "SELECT nama FROM anggota WHERE id = ?";
-    $stmt = $conn->prepare($nameQuery);
-    $stmt->bind_param("i", $memberId);
-    $stmt->execute();
-    $nameResult = $stmt->get_result();
-    if ($nameRow = $nameResult->fetch_assoc()) {
-        $search = $nameRow['nama'];
-    }
-    $stmt->close();
-}
-
-$whereClause = [];
-if ($search) {
-    $whereClause[] = "a.nama LIKE '%$search%'";
-}
-if ($generation) {
-    if ($generation === '0') {
-        $whereClause[] = "a.generasi = '0'";
-    } else {
-        $whereClause[] = "a.generasi = '$generation'";
-    }
-}
-
-$whereClauseSql = !empty($whereClause) ? "WHERE " . implode(" AND ", $whereClause) : "";
-
-$conn->query("SET SESSION group_concat_max_len = 1000000");
-
-$records_per_page = 12;
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$offset = ($page - 1) * $records_per_page;
-
-$query = "
-    SELECT a.*,
-           ayah.nama as nama_ayah,
-           ibu.nama as nama_ibu,
-           istri1.nama as nama_istri_1,
-           istri2.nama as nama_istri_2,
-           istri3.nama as nama_istri_3,
-           (SELECT GROUP_CONCAT(DISTINCT suami.nama ORDER BY suami.nama ASC SEPARATOR ', ')
-            FROM anggota suami 
-            WHERE (suami.id_istri_1 = a.id 
-               OR suami.id_istri_2 = a.id 
-               OR suami.id_istri_3 = a.id)) as nama_suami,
-           GROUP_CONCAT(DISTINCT anak.nama ORDER BY anak.id ASC SEPARATOR ', ') as nama_anak
-    FROM anggota a
-    LEFT JOIN anggota ayah ON a.id_ayah = ayah.id
-    LEFT JOIN anggota ibu ON a.id_ibu = ibu.id
-    LEFT JOIN anggota istri1 ON a.id_istri_1 = istri1.id
-    LEFT JOIN anggota istri2 ON a.id_istri_2 = istri2.id
-    LEFT JOIN anggota istri3 ON a.id_istri_3 = istri3.id
-    LEFT JOIN anggota anak ON anak.id_ayah = a.id OR anak.id_ibu = a.id
-    $whereClauseSql
-    GROUP BY a.id
-    ORDER BY a.generasi, a.id
-    LIMIT $records_per_page OFFSET $offset
-";
-
-$count_query = "
-    SELECT COUNT(DISTINCT a.id) as total 
-    FROM anggota a
-    $whereClauseSql
-";
-$count_result = $conn->query($count_query);
-$total_records = $count_result->fetch_assoc()['total'];
-$total_pages = ceil($total_records / $records_per_page);
-
-$result = $conn->query($query);
-
-$generationQuery = "SELECT DISTINCT generasi FROM anggota ORDER BY generasi";
-$generationResult = $conn->query($generationQuery);
-$generations = [];
-while ($row = $generationResult->fetch_assoc()) {
-    $generations[] = $row['generasi'];
-}
+require_once '../../server/taromboBackend.php';
 ?>
 
 <!DOCTYPE html>
@@ -104,7 +13,7 @@ while ($row = $generationResult->fetch_assoc()) {
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col">
-    
+
     <header class="bg-blue-500 text-white py-4">
         <div class="container mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -252,7 +161,6 @@ while ($row = $generationResult->fetch_assoc()) {
                 </div>
             <?php endif; ?>
         </div>
-
 
         <div class="mt-8 flex justify-center items-center space-x-2">
             <?php if ($total_pages > 1): ?>
