@@ -3,3 +3,5 @@ node_modules
 assets/bootstrap
 /package_lock.json
 .env
+/src/adminPage/olahData.php
+/src/adminPage/query.php
